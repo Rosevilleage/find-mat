@@ -147,14 +147,14 @@ export function MapScreen({
       {onBackToHome && (
         <button
           onClick={onBackToHome}
-          className="absolute top-4 left-4 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+          className="absolute top-5 left-2 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
         >
           <IconChevronLeft className="w-5 h-5 text-foreground" />
         </button>
       )}
 
       {/* Search Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 space-y-3">
+      <div className="absolute top-0 left-0 right-0 z-20 py-4 space-y-3">
         <SearchBar onFilterClick={() => {}} />
 
         {/* 검색된 음식 표시 */}
@@ -215,7 +215,6 @@ export function MapScreen({
         className="absolute bottom-0 left-0 right-0 bg-background rounded-t-[24px] shadow-2xl z-30 overflow-hidden"
         style={{
           boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.1)",
-          marginBottom: "17px",
         }}
       >
         {/* Grab Handle */}

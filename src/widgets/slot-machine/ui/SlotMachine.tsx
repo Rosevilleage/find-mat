@@ -83,7 +83,7 @@ export function SlotMachine({
           transition={{ duration: 0.3 }}
         >
           <motion.div
-            className="relative w-80 bg-gradient-to-b from-indigo-500 to-indigo-600 rounded-3xl shadow-2xl overflow-hidden"
+            className="relative w-80 bg-linear-to-b from-indigo-500 to-indigo-600 rounded-3xl shadow-2xl overflow-hidden"
             initial={{ scale: 0.8, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.8, y: 50 }}
@@ -98,13 +98,13 @@ export function SlotMachine({
             {/* 슬롯 디스플레이 영역 */}
             <div className="relative bg-white/10 backdrop-blur-md mx-6 my-6 rounded-2xl overflow-hidden">
               {/* 상단 그라디언트 오버레이 */}
-              <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-indigo-500 to-transparent z-10 pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-16 bg-linear-to-b from-indigo-500 to-transparent z-10 pointer-events-none" />
               
               {/* 중앙 선택 영역 표시 */}
               <div className="absolute top-1/2 left-0 right-0 h-20 -mt-10 border-y-4 border-yellow-400 bg-yellow-400/10 z-10 pointer-events-none" />
               
               {/* 하단 그라디언트 오버레이 */}
-              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-indigo-500 to-transparent z-10 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-indigo-500 to-transparent z-10 pointer-events-none" />
 
               {/* 슬롯 애니메이션 */}
               <div className="relative h-64 overflow-hidden">

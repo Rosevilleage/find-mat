@@ -57,7 +57,7 @@ export function RestaurantCard({
                   e.stopPropagation();
                   onBookmark();
                 }}
-                className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
+                className="p-1 hover:bg-muted rounded-lg transition-colors shrink-0"
               >
                 <IconBookmark
                   className={cn(

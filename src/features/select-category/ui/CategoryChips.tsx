@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import { cn } from '@/shared/lib/utils';
+import { motion } from "framer-motion";
+import { cn } from "@/shared/lib/utils";
 
 interface CategoryChipsProps {
   categories: string[];
@@ -7,7 +7,11 @@ interface CategoryChipsProps {
   onSelect: (category: string) => void;
 }
 
-export function CategoryChips({ categories, selected, onSelect }: CategoryChipsProps) {
+export function CategoryChips({
+  categories,
+  selected,
+  onSelect,
+}: CategoryChipsProps) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
       <style>{`
@@ -40,4 +44,3 @@ export function CategoryChips({ categories, selected, onSelect }: CategoryChipsP
     </div>
   );
 }
-

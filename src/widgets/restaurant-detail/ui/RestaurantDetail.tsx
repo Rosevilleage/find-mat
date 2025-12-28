@@ -41,7 +41,7 @@ export function RestaurantDetail({
           </button>
 
           {/* Gallery Placeholder */}
-          <div className="relative h-48 bg-gradient-to-br from-primary/10 to-primary/5">
+          <div className="relative h-48 bg-linear-to-br from-primary/10 to-primary/5">
             {restaurant.image ? (
               <img
                 src={restaurant.image}

@@ -24,7 +24,7 @@ export function FoodResultModal({
 }: FoodResultModalProps) {
   return (
     <motion.div
-      className="fixed inset-0 z-60 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-end justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -68,7 +68,7 @@ export function FoodResultModal({
               stiffness: 300,
             }}
           >
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-xl">
+            <div className="w-24 h-24 rounded-full bg-linear-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-xl">
               {renderFoodIcon(foodName, "w-14 h-14")}
             </div>
           </motion.div>

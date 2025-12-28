@@ -1,5 +1,5 @@
-import { IconSearch, IconAdjustments } from '@tabler/icons-react';
-import { useState } from 'react';
+import { IconSearch } from "@tabler/icons-react";
+import { useState } from "react";
 
 interface SearchBarProps {
   placeholder?: string;
@@ -7,12 +7,12 @@ interface SearchBarProps {
   onFilterClick?: () => void;
 }
 
-export function SearchBar({ 
-  placeholder = "음식/가게 이름 검색", 
+export function SearchBar({
+  placeholder = "음식/가게 이름 검색",
   onSearch,
-  onFilterClick 
+  onFilterClick,
 }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +20,8 @@ export function SearchBar({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative">
+    <form onSubmit={handleSubmit} className="relative px-1">
       <div className="relative flex items-center">
-        <IconSearch className="absolute left-4 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
           value={query}
@@ -36,11 +35,10 @@ export function SearchBar({
             onClick={onFilterClick}
             className="absolute right-3 p-2 hover:bg-muted rounded-lg transition-colors"
           >
-            <IconAdjustments className="w-5 h-5 text-muted-foreground" />
+            <IconSearch className="w-5 h-5 text-muted-foreground" />
           </button>
         )}
       </div>
     </form>
   );
 }
-
