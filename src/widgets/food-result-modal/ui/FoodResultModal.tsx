@@ -40,7 +40,7 @@ export function FoodResultModal({
 
       {/* Modal Sheet - iOS style */}
       <motion.div
-        className="relative w-full max-w-[390px] bg-white rounded-t-[32px] overflow-hidden shadow-2xl"
+        className="relative w-full tablet:max-w-tablet bg-white rounded-t-[32px] overflow-hidden shadow-2xl"
         initial={{ y: 500, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 500, opacity: 0 }}

@@ -417,12 +417,14 @@ function App() {
   };
 
   return (
-    <div className="relative w-full h-screen bg-pastel overflow-hidden">
-      {/* Pattern Background for Desktop */}
-      <PatternBackground />
-      
-      {/* iPhone Frame */}
-      <div className="mx-auto h-full max-w-[390px] bg-background relative z-10">
+    <div className="relative w-full h-screen overflow-hidden bg-pastel">
+      {/* Pattern Background for Desktop/Tablet */}
+      <div className="hidden tablet:block">
+        <PatternBackground />
+      </div>
+
+      {/* Content Container */}
+      <div className="mx-auto h-full w-full tablet:max-w-tablet bg-background relative z-10">
         {/* Main Content */}
         <div className="h-full">
           {currentScreen === "home" && (
