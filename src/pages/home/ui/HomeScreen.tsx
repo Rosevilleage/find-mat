@@ -1,29 +1,26 @@
-import { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { SlotMachine, SlotMachineIcon } from '@/widgets/slot-machine';
-import { FoodResultModal } from '@/widgets/food-result-modal';
-import { IconMapPin } from '@tabler/icons-react';
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { AnimatePresence } from "framer-motion";
+import { SlotMachine, SlotMachineIcon } from "@/widgets/slot-machine";
+import { FoodResultModal } from "@/widgets/food-result-modal";
+import { IconMapPin } from "@tabler/icons-react";
+import { FOOD_ITEMS } from "@/shared/config";
 
-interface HomeScreenProps {
-  foodItems: string[];
-  onFindNearby: (foodItem: string) => void;
-  onShowNearbyRestaurants: () => void;
-}
-
-export function HomeScreen({ foodItems, onFindNearby, onShowNearbyRestaurants }: HomeScreenProps) {
+export function HomeScreen() {
+  const navigate = useNavigate();
   const [isRolling, setIsRolling] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
 
   const handleRollDice = () => {
     if (isRolling) return;
-    
+
     setIsRolling(true);
     setShowResult(false);
-    
+
     // 랜덤 음식 선택
-    const randomIndex = Math.floor(Math.random() * foodItems.length);
-    const selectedFood = foodItems[randomIndex];
+    const randomIndex = Math.floor(Math.random() * FOOD_ITEMS.length);
+    const selectedFood = FOOD_ITEMS[randomIndex];
     setResult(selectedFood);
   };
 
@@ -43,8 +40,14 @@ export function HomeScreen({ foodItems, onFindNearby, onShowNearbyRestaurants }:
 
   const handleFindNearby = () => {
     if (result) {
-      onFindNearby(result);
+      // URL에 음식 정보를 포함하여 맵 페이지로 이동
+      navigate(`/map?food=${encodeURIComponent(result)}`);
     }
+  };
+
+  const handleShowNearbyRestaurants = () => {
+    // 내 주위 음식점 보기 (검색 없이)
+    navigate("/map");
   };
 
   const handleClose = () => {
@@ -76,7 +79,9 @@ export function HomeScreen({ foodItems, onFindNearby, onShowNearbyRestaurants }:
         {!isRolling && !showResult && (
           <div className="text-center text-muted-foreground mb-8">
             <p>음식 뽑기를 시작해보세요!</p>
-            <p className="text-sm mt-2">100가지 이상의 음식 중 랜덤으로 추천해드려요</p>
+            <p className="text-sm mt-2">
+              100가지 이상의 음식 중 랜덤으로 추천해드려요
+            </p>
           </div>
         )}
       </div>
@@ -91,11 +96,13 @@ export function HomeScreen({ foodItems, onFindNearby, onShowNearbyRestaurants }:
           <div className="w-6 h-6 flex items-center justify-center bg-white rounded-lg">
             <SlotMachineIcon className="w-5 h-5" />
           </div>
-          <span className="text-lg">{isRolling ? '음식 뽑는 중...' : '음식 뽑기'}</span>
+          <span className="text-lg">
+            {isRolling ? "음식 뽑는 중..." : "음식 뽑기"}
+          </span>
         </button>
-        
+
         <button
-          onClick={onShowNearbyRestaurants}
+          onClick={handleShowNearbyRestaurants}
           className="w-full py-5 bg-white hover:bg-gray-50 active:bg-gray-100 text-indigo-600 border-2 border-indigo-600 rounded-2xl transition-all duration-150 flex items-center justify-center gap-3 active:scale-[0.98] shadow-lg"
         >
           <IconMapPin className="w-6 h-6" />
@@ -107,7 +114,7 @@ export function HomeScreen({ foodItems, onFindNearby, onShowNearbyRestaurants }:
       {isRolling && result && (
         <SlotMachine
           isRolling={isRolling}
-          foodItems={foodItems}
+          foodItems={FOOD_ITEMS}
           result={result}
           onComplete={handleSlotComplete}
         />
@@ -127,4 +134,3 @@ export function HomeScreen({ foodItems, onFindNearby, onShowNearbyRestaurants }:
     </div>
   );
 }
-

@@ -1,8 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import { AnimatePresence } from "framer-motion";
 import { SearchBar } from "@/features/search-restaurant";
 import { CategoryChips } from "@/features/select-category";
 import { MapView } from "@/shared/ui/map-view";
-import { RestaurantCard } from "@/entities/restaurant";
+import { RestaurantCard, MOCK_RESTAURANTS } from "@/entities/restaurant";
+import { RestaurantDetail } from "@/widgets/restaurant-detail";
 import type { Restaurant } from "@/entities/restaurant";
 import { motion } from "framer-motion";
 import {
@@ -13,36 +16,31 @@ import {
   IconChevronLeft,
 } from "@tabler/icons-react";
 import { Button } from "@/shared/ui/kit/button";
+import { CATEGORIES } from "@/shared/config";
 
 interface MapScreenProps {
-  categories: string[];
-  restaurants: Restaurant[];
-  initialCategory?: string | null;
-  searchedFood?: string | null;
-  onRestaurantClick: (restaurant: Restaurant) => void;
   hasLocationPermission?: boolean;
   onRequestPermission?: () => void;
-  onClearSearch?: () => void;
-  onBackToHome?: () => void;
+  onShowToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 export function MapScreen({
-  categories,
-  restaurants,
-  initialCategory = null,
-  searchedFood = null,
-  onRestaurantClick,
   hasLocationPermission = true,
   onRequestPermission,
-  onClearSearch,
-  onBackToHome,
+  onShowToast,
 }: MapScreenProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    initialCategory
-  );
-  const [selectedRestaurant, setSelectedRestaurant] = useState<string | null>(
-    null
-  );
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // URL에서 검색된 음식 읽기
+  const searchedFood = searchParams.get("food");
+
+  // 로컬 상태 관리
+  const [restaurants, setRestaurants] =
+    useState<Restaurant[]>(MOCK_RESTAURANTS);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
   const [sheetHeight, setSheetHeight] = useState<"collapsed" | "half" | "full">(
     "half"
   );
@@ -68,6 +66,7 @@ export function MapScreen({
   let filteredRestaurants = restaurants;
 
   if (searchedFood) {
+    // 검색된 음식이 있으면 카테고리 필터링 무시
     // 검색된 음식을 메뉴에 포함하는 식당들
     filteredRestaurants = restaurants.filter((r) =>
       r.menuItems?.some((item) => item.includes(searchedFood))
@@ -106,8 +105,42 @@ export function MapScreen({
     lat: number;
     lng: number;
   }) => {
-    setSelectedRestaurant(restaurant.id);
+    const foundRestaurant = restaurants.find((r) => r.id === restaurant.id);
+    if (foundRestaurant) {
+      setSelectedRestaurant(foundRestaurant);
+    }
     setSheetHeight("half");
+  };
+
+  const handleRestaurantClick = (restaurant: Restaurant) => {
+    setSelectedRestaurant(restaurant);
+  };
+
+  const handleBackToHome = () => {
+    navigate("/");
+  };
+
+  const handleClearSearch = () => {
+    // URL에서 food 파라미터 제거 (히스토리에 추가하지 않고 현재 항목을 대체)
+    navigate("/map", { replace: true });
+    // 카테고리 선택도 초기화
+    setSelectedCategory(null);
+  };
+
+  const handleBookmark = (restaurantId: string) => {
+    setRestaurants((prev) =>
+      prev.map((r) =>
+        r.id === restaurantId ? { ...r, isBookmarked: !r.isBookmarked } : r
+      )
+    );
+    const restaurant = restaurants.find((r) => r.id === restaurantId);
+    if (onShowToast) {
+      if (restaurant?.isBookmarked) {
+        onShowToast("즐겨찾기에서 제거되었습니다.", "info");
+      } else {
+        onShowToast("즐겨찾기에 추가되었습니다.");
+      }
+    }
   };
 
   const sheetHeights = {
@@ -144,14 +177,12 @@ export function MapScreen({
   return (
     <div className="relative flex flex-col h-full">
       {/* Back Button */}
-      {onBackToHome && (
-        <button
-          onClick={onBackToHome}
-          className="absolute top-5 left-2 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
-        >
-          <IconChevronLeft className="w-5 h-5 text-foreground" />
-        </button>
-      )}
+      <button
+        onClick={handleBackToHome}
+        className="absolute top-5 left-2 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+      >
+        <IconChevronLeft className="w-5 h-5 text-foreground" />
+      </button>
 
       {/* Search Bar */}
       <div className="absolute top-0 left-0 right-0 z-20 py-4 space-y-3">
@@ -168,24 +199,22 @@ export function MapScreen({
               <span className="text-primary">'{searchedFood}'</span>을(를) 파는
               식당
             </span>
-            {onClearSearch && (
-              <button
-                onClick={onClearSearch}
-                className="p-1 hover:bg-primary/20 rounded-lg transition-colors"
-              >
-                <IconX className="w-4 h-4 text-primary" />
-              </button>
-            )}
+            <button
+              onClick={handleClearSearch}
+              className="p-1 hover:bg-primary/20 rounded-lg transition-colors"
+            >
+              <IconX className="w-4 h-4 text-primary" />
+            </button>
           </motion.div>
         )}
 
         {!searchedFood && (
           <CategoryChips
-            categories={categories}
+            categories={CATEGORIES}
             selected={selectedCategory}
-            onSelect={(cat) =>
-              setSelectedCategory(cat === selectedCategory ? null : cat)
-            }
+            onSelect={(cat) => {
+              setSelectedCategory(cat === selectedCategory ? null : cat);
+            }}
           />
         )}
       </div>
@@ -195,7 +224,7 @@ export function MapScreen({
         <MapView
           restaurants={mockMapRestaurants}
           onPinClick={handlePinClick}
-          selectedId={selectedRestaurant ?? undefined}
+          selectedId={selectedRestaurant?.id ?? undefined}
         />
       </div>
 
@@ -266,7 +295,7 @@ export function MapScreen({
                 <RestaurantCard
                   key={restaurant.id}
                   restaurant={restaurant}
-                  onClick={() => onRestaurantClick(restaurant)}
+                  onClick={() => handleRestaurantClick(restaurant)}
                   onBookmark={() => {}}
                 />
               ))}
@@ -274,6 +303,17 @@ export function MapScreen({
           )}
         </div>
       </motion.div>
+
+      {/* Restaurant Detail Modal */}
+      <AnimatePresence>
+        {selectedRestaurant && (
+          <RestaurantDetail
+            restaurant={selectedRestaurant}
+            onClose={() => setSelectedRestaurant(null)}
+            onBookmark={() => handleBookmark(selectedRestaurant.id)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

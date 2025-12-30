@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { IconRefresh, IconMapPin, IconX } from "@tabler/icons-react";
 import { getFoodIcon } from "@/entities/food";
