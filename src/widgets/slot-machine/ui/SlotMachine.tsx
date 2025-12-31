@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotMachineIcon } from "./SlotMachineIcon";
+import { getFoodCategory, getCategoryIcon } from "@/entities/food";
 
 // 스파클 위치를 미리 정의 (렌더링 시 Math.random() 사용 방지)
 const SPARKLE_POSITIONS = [
-  { id: 1, left: '35%', top: '40%' },
-  { id: 2, left: '55%', top: '35%' },
-  { id: 3, left: '45%', top: '55%' },
-  { id: 4, left: '65%', top: '45%' },
-  { id: 5, left: '40%', top: '60%' },
+  { id: 1, left: "25%", top: "30%" },
+  { id: 2, left: "75%", top: "35%" },
+  { id: 3, left: "50%", top: "55%" },
+  { id: 4, left: "80%", top: "50%" },
+  { id: 5, left: "20%", top: "60%" },
 ];
 
 interface SlotMachineProps {
@@ -18,6 +19,12 @@ interface SlotMachineProps {
   onComplete: () => void;
 }
 
+interface SlotColumn {
+  categories: string[];
+  icons: React.ComponentType<{ className?: string }>[];
+  foodNames: string[];
+}
+
 export function SlotMachine({
   isRolling,
   foodItems,
@@ -25,29 +32,43 @@ export function SlotMachine({
   onComplete,
 }: SlotMachineProps) {
   const [showSlot, setShowSlot] = useState(false);
-  const [displayItems, setDisplayItems] = useState<string[]>([]);
+  const [slotColumns, setSlotColumns] = useState<SlotColumn>({
+    categories: [],
+    icons: [],
+    foodNames: [],
+  });
 
   useEffect(() => {
     if (!isRolling) return;
-    
-    let completionTimer: NodeJS.Timeout;
-    let hideTimer: NodeJS.Timeout;
-    
+
+    let completionTimer: ReturnType<typeof setTimeout>;
+    let hideTimer: ReturnType<typeof setTimeout>;
+
     // 비동기로 상태 업데이트
     const startAnimation = () => {
       setShowSlot(true);
-      // 랜덤하게 표시할 음식들 생성
-      const randomItems = Array.from({ length: 30 }, () => 
-        foodItems[Math.floor(Math.random() * foodItems.length)]
+
+      // 랜덤하게 표시할 음식들 생성 (30개)
+      const randomFoods = Array.from(
+        { length: 30 },
+        () => foodItems[Math.floor(Math.random() * foodItems.length)]
       );
-      
+
       // 결과값을 배열의 중간 위치(index 15)에 배치
       const resultIndex = 15;
-      randomItems[resultIndex] = result;
-      
-      setDisplayItems(randomItems);
+      randomFoods[resultIndex] = result;
 
-      // 슬롯 애니메이션 완료 시간 (3초)
+      // 각 음식에 대한 카테고리와 아이콘 생성
+      const categories = randomFoods.map((food) => getFoodCategory(food));
+      const icons = categories.map((category) => getCategoryIcon(category));
+
+      setSlotColumns({
+        categories,
+        icons,
+        foodNames: randomFoods,
+      });
+
+      // 슬롯 애니메이션 완료 시간 (3초 - 가장 긴 컬럼 기준)
       completionTimer = setTimeout(() => {
         onComplete();
         hideTimer = setTimeout(() => {
@@ -55,10 +76,10 @@ export function SlotMachine({
         }, 400);
       }, 3000);
     };
-    
+
     // requestAnimationFrame을 사용하여 다음 프레임에서 실행
     const rafId = requestAnimationFrame(startAnimation);
-    
+
     return () => {
       cancelAnimationFrame(rafId);
       if (completionTimer) clearTimeout(completionTimer);
@@ -70,7 +91,7 @@ export function SlotMachine({
   const resultIndex = 15;
   const itemHeight = 80;
   const centerPosition = 128; // 화면 중앙
-  const finalY = centerPosition - (resultIndex * itemHeight) - (itemHeight / 2);
+  const finalY = centerPosition - resultIndex * itemHeight - itemHeight / 2;
 
   return (
     <AnimatePresence>
@@ -83,7 +104,7 @@ export function SlotMachine({
           transition={{ duration: 0.3 }}
         >
           <motion.div
-            className="relative w-80 bg-linear-to-b from-indigo-500 to-indigo-600 rounded-3xl shadow-2xl overflow-hidden"
+            className="relative max-w-[500px] w-full bg-linear-to-b from-indigo-500 to-indigo-600 rounded-3xl shadow-2xl overflow-hidden"
             initial={{ scale: 0.8, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.8, y: 50 }}
@@ -99,39 +120,95 @@ export function SlotMachine({
             <div className="relative bg-white/10 backdrop-blur-md mx-6 my-6 rounded-2xl overflow-hidden">
               {/* 상단 그라디언트 오버레이 */}
               <div className="absolute top-0 left-0 right-0 h-16 bg-linear-to-b from-indigo-500 to-transparent z-10 pointer-events-none" />
-              
+
               {/* 중앙 선택 영역 표시 */}
               <div className="absolute top-1/2 left-0 right-0 h-20 -mt-10 border-y-4 border-yellow-400 bg-yellow-400/10 z-10 pointer-events-none" />
-              
+
               {/* 하단 그라디언트 오버레이 */}
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-indigo-500 to-transparent z-10 pointer-events-none" />
 
-              {/* 슬롯 애니메이션 */}
-              <div className="relative h-64 overflow-hidden">
-                <motion.div
-                  className="absolute left-0 right-0 flex flex-col items-center"
-                  initial={{ y: 0 }}
-                  animate={{
-                    y: [0, -100, finalY],
-                  }}
-                  transition={{
-                    duration: 3,
-                    times: [0, 0.1, 1],
-                    ease: [0.34, 1.56, 0.64, 1],
-                  }}
-                >
-                  {displayItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className="h-20 flex items-center justify-center text-white text-2xl py-2"
-                      style={{
-                        textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                      }}
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </motion.div>
+              {/* 3개의 슬롯 컬럼 */}
+              <div className="relative h-64 overflow-hidden flex">
+                {/* 컬럼 1: 카테고리 */}
+                <div className="flex-1 relative overflow-hidden border-r-2 border-white/20">
+                  <motion.div
+                    className="absolute left-0 right-0 flex flex-col items-center"
+                    initial={{ y: 0 }}
+                    animate={{
+                      y: [0, -100, finalY],
+                    }}
+                    transition={{
+                      duration: 2.0,
+                      times: [0, 0.1, 1],
+                      ease: [0.34, 1.56, 0.64, 1],
+                    }}
+                  >
+                    {slotColumns.categories.map((category, index) => (
+                      <div
+                        key={index}
+                        className="h-20 flex items-center justify-center text-white text-base font-medium py-2 px-2 text-center"
+                        style={{
+                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        {category}
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
+
+                {/* 컬럼 2: 아이콘 */}
+                <div className="flex-1 relative overflow-hidden border-r-2 border-white/20">
+                  <motion.div
+                    className="absolute left-0 right-0 flex flex-col items-center"
+                    initial={{ y: 0 }}
+                    animate={{
+                      y: [0, -100, finalY],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      times: [0, 0.1, 1],
+                      ease: [0.34, 1.56, 0.64, 1],
+                    }}
+                  >
+                    {slotColumns.icons.map((IconComponent, index) => (
+                      <div
+                        key={index}
+                        className="h-20 flex items-center justify-center py-2"
+                      >
+                        <IconComponent className="w-12 h-12" />
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
+
+                {/* 컬럼 3: 음식 이름 */}
+                <div className="flex-1 relative overflow-hidden">
+                  <motion.div
+                    className="absolute left-0 right-0 flex flex-col items-center"
+                    initial={{ y: 0 }}
+                    animate={{
+                      y: [0, -100, finalY],
+                    }}
+                    transition={{
+                      duration: 3.0,
+                      times: [0, 0.1, 1],
+                      ease: [0.34, 1.56, 0.64, 1],
+                    }}
+                  >
+                    {slotColumns.foodNames.map((foodName, index) => (
+                      <div
+                        key={index}
+                        className="h-20 flex items-center justify-center text-white text-lg font-bold py-2 px-2 text-center"
+                        style={{
+                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                        }}
+                      >
+                        {foodName}
+                      </div>
+                    ))}
+                  </motion.div>
+                </div>
               </div>
             </div>
 
@@ -158,7 +235,7 @@ export function SlotMachine({
 
             {/* 사이드 장식 - 왼쪽 */}
             <div className="absolute left-2 top-1/2 -mt-8 w-8 h-16 bg-yellow-400/20 rounded-full blur-sm" />
-            
+
             {/* 사이드 장식 - 오른쪽 */}
             <div className="absolute right-2 top-1/2 -mt-8 w-8 h-16 bg-yellow-400/20 rounded-full blur-sm" />
           </motion.div>
@@ -189,4 +266,3 @@ export function SlotMachine({
     </AnimatePresence>
   );
 }
-
