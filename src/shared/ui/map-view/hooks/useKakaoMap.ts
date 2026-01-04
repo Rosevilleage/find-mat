@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { createMap, isSDKLoaded, type CreateMapOptions } from "@/shared/lib/kakao-map";
+import { createMap, isSDKLoaded, loadKakaoMapSDK, type CreateMapOptions } from "@/shared/lib/kakao-map";
 
 /**
  * 지도 중심 좌표
@@ -57,11 +57,19 @@ export function useKakaoMap(options: UseKakaoMapOptions): UseKakaoMapReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 초기 center를 ref에 저장 (한 번만 사용)
+  const initialCenterRef = useRef(center);
+
   /**
-   * 지도 초기화
+   * 지도 초기화 (마운트 시 한 번만 실행)
    */
   const initializeMap = useCallback(() => {
     if (!mapContainerRef.current) {
+      return;
+    }
+
+    // 이미 지도가 생성되어 있으면 재생성하지 않음
+    if (mapInstanceRef.current) {
       return;
     }
 
@@ -73,8 +81,8 @@ export function useKakaoMap(options: UseKakaoMapOptions): UseKakaoMapReturn {
 
       const mapOptions: CreateMapOptions = {
         center: {
-          lat: center.lat,
-          lng: center.lng,
+          lat: initialCenterRef.current.lat,
+          lng: initialCenterRef.current.lng,
         },
         level,
       };
@@ -88,25 +96,28 @@ export function useKakaoMap(options: UseKakaoMapOptions): UseKakaoMapReturn {
       setError(errorMessage);
       setIsLoading(false);
     }
-  }, [center.lat, center.lng, level]);
+  }, [level]);
 
   /**
-   * 컴포넌트 마운트 시 지도 초기화
+   * 컴포넌트 마운트 시 지도 초기화 (한 번만 실행)
    */
   useEffect(() => {
     // SDK가 이미 로드되었는지 확인
     if (isSDKLoaded()) {
       initializeMap();
     } else {
-      // SDK 로드 대기 (kakao.maps.load 사용)
-      try {
-        kakao.maps.load(() => {
+      // SDK 동적 로드
+      loadKakaoMapSDK()
+        .then(() => {
           initializeMap();
+        })
+        .catch((error) => {
+          const errorMessage = error instanceof Error
+            ? error.message
+            : "Kakao Map SDK is not available";
+          setError(errorMessage);
+          setIsLoading(false);
         });
-      } catch {
-        setError("Kakao Map SDK is not available");
-        setIsLoading(false);
-      }
     }
 
     // Cleanup

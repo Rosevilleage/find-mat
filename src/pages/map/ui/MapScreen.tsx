@@ -17,6 +17,7 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/shared/ui/kit/button";
 import { CATEGORIES } from "@/shared/config";
+import { useGeolocation } from "@/shared/hooks";
 
 interface MapScreenProps {
   hasLocationPermission?: boolean;
@@ -31,6 +32,9 @@ export function MapScreen({
 }: MapScreenProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // 사용자 위치 가져오기 (실패 시 서울 기본 좌표 사용)
+  const { coordinates: userLocation } = useGeolocation();
 
   // URL에서 검색된 음식 읽기
   const searchedFood = searchParams.get("food");
@@ -225,6 +229,7 @@ export function MapScreen({
           restaurants={mockMapRestaurants}
           onPinClick={handlePinClick}
           selectedId={selectedRestaurant?.id ?? undefined}
+          center={userLocation ?? undefined}
         />
       </div>
 
