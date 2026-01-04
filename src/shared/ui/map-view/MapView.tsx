@@ -1,18 +1,9 @@
-import { useCallback } from "react";
-import { IconNavigation } from "@tabler/icons-react";
-import { motion } from "framer-motion";
-import { useKakaoMap } from "./hooks";
-
-/**
- * 지도에 표시할 레스토랑 정보
- */
-interface MapRestaurant {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  isSelected?: boolean;
-}
+import React from "react";
+import {
+  useKakaoMap,
+  useMapMarkers,
+  type MapRestaurant,
+} from "./hooks";
 
 /**
  * 지도 중심 좌표
@@ -36,6 +27,8 @@ interface MapViewProps {
   center?: MapCenter;
   /** 지도 줌 레벨 (기본값: 3) */
   level?: number;
+  /** 지도 인스턴스 준비 완료 시 호출되는 콜백 */
+  onMapReady?: (map: kakao.maps.Map) => void;
 }
 
 /** 기본 중심 좌표 (서울) */
@@ -61,33 +54,32 @@ const DEFAULT_LEVEL = 3;
  * ```
  */
 export function MapView({
-  restaurants: _restaurants,
-  onPinClick: _onPinClick,
-  selectedId: _selectedId,
+  restaurants,
+  onPinClick,
+  selectedId,
   center = DEFAULT_CENTER,
   level = DEFAULT_LEVEL,
+  onMapReady,
 }: MapViewProps) {
-  // TODO: Phase 4에서 마커 기능 구현 시 사용 예정
-  void _restaurants;
-  void _onPinClick;
-  void _selectedId;
-
   const { mapContainerRef, mapInstance, isLoading, error } = useKakaoMap({
     center,
     level,
   });
 
-  /**
-   * 현재 위치 버튼 클릭 핸들러
-   */
-  const handleCurrentLocationClick = useCallback(() => {
-    if (!mapInstance) {
-      return;
+  // 지도 인스턴스가 준비되면 콜백 호출
+  React.useEffect(() => {
+    if (mapInstance && onMapReady) {
+      onMapReady(mapInstance);
     }
+  }, [mapInstance, onMapReady]);
 
-    // TODO: Phase 5에서 현재 위치 기능 구현
-    // Geolocation API를 사용하여 현재 위치 가져오기
-  }, [mapInstance]);
+  // 마커 렌더링 및 관리
+  useMapMarkers({
+    map: mapInstance,
+    restaurants,
+    selectedId,
+    onMarkerClick: onPinClick,
+  });
 
   // 에러 상태 렌더링
   if (error) {
@@ -122,16 +114,6 @@ export function MapView({
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       )}
-
-      {/* Current Location Button */}
-      <motion.button
-        data-testid="current-location-button"
-        onClick={handleCurrentLocationClick}
-        whileTap={{ scale: 0.9 }}
-        className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
-      >
-        <IconNavigation className="w-5 h-5 text-primary" fill="currentColor" />
-      </motion.button>
     </div>
   );
 }

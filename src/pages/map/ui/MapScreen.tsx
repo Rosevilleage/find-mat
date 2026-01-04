@@ -3,7 +3,11 @@ import { useNavigate, useSearchParams } from "react-router";
 import { AnimatePresence } from "framer-motion";
 import { SearchBar } from "@/features/search-restaurant";
 import { CategoryChips } from "@/features/select-category";
-import { MapView } from "@/shared/ui/map-view";
+import {
+  MapView,
+  CurrentLocationButton,
+  useCurrentLocation,
+} from "@/shared/ui/map-view";
 import { RestaurantCard, MOCK_RESTAURANTS } from "@/entities/restaurant";
 import { RestaurantDetail } from "@/widgets/restaurant-detail";
 import type { Restaurant } from "@/entities/restaurant";
@@ -48,6 +52,16 @@ export function MapScreen({
   const [sheetHeight, setSheetHeight] = useState<"collapsed" | "half" | "full">(
     "half"
   );
+  const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
+
+  // 현재 위치 기능
+  const {
+    isLoading: isLocationLoading,
+    error: locationError,
+    moveToCurrentLocation,
+  } = useCurrentLocation({
+    map: mapInstance,
+  });
 
   // 카테고리별로 최고 평점 식당만 필터링
   const getTopRatedByCategory = (restaurantList: Restaurant[]) => {
@@ -90,15 +104,18 @@ export function MapScreen({
   }
 
   const mockMapRestaurants = React.useMemo(() => {
-    // 각 레스토랑에 고정된 위치 할당 (ID 기반 해시)
+    // 각 레스토랑에 서울 근처 고정 위치 할당 (ID 기반 해시)
     return filteredRestaurants.slice(0, 8).map((r) => {
       const hash = r.id
         .split("")
         .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      // 서울 중심 (37.5665, 126.978) 기준 ±0.05 범위 내 랜덤 위치
+      const latOffset = ((hash * 37) % 100) / 1000; // 0 ~ 0.1
+      const lngOffset = ((hash * 73) % 100) / 1000; // 0 ~ 0.1
       return {
         ...r,
-        lat: 20 + ((hash * 37) % 60),
-        lng: 20 + ((hash * 73) % 60),
+        lat: 37.5165 + latOffset, // 37.5165 ~ 37.6165
+        lng: 126.928 + lngOffset, // 126.928 ~ 127.028
       };
     });
   }, [filteredRestaurants]);
@@ -230,10 +247,11 @@ export function MapScreen({
           onPinClick={handlePinClick}
           selectedId={selectedRestaurant?.id ?? undefined}
           center={userLocation ?? undefined}
+          onMapReady={setMapInstance}
         />
       </div>
 
-      {/* Bottom Sheet */}
+      {/* Bottom Sheet Container */}
       <motion.div
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
@@ -246,67 +264,100 @@ export function MapScreen({
           }
         }}
         animate={{ height: sheetHeights[sheetHeight] }}
-        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-[24px] shadow-2xl z-30 overflow-hidden"
-        style={{
-          boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.1)",
+        transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 40,
+          mass: 0.5,
         }}
+        className="absolute bottom-0 left-0 right-0 z-30"
       >
-        {/* Grab Handle */}
-        <div className="flex justify-center py-3 cursor-grab active:cursor-grabbing">
-          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
-        </div>
-
-        {/* Sheet Content */}
-        <div className="px-4 pb-20 overflow-y-auto h-full">
-          <div className="flex items-center justify-between mb-4">
-            <h3>
-              {searchedFood
-                ? `'${searchedFood}' 파는 곳`
-                : selectedCategory
-                ? `${selectedCategory} 음식점`
-                : "추천 음식점"}
-              <span className="text-muted-foreground ml-2">
-                ({filteredRestaurants.length})
-              </span>
-            </h3>
-            <button
-              onClick={() =>
-                setSheetHeight(sheetHeight === "full" ? "half" : "full")
-              }
-              className="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
-            >
-              <IconChevronUp
-                className={`w-5 h-5 text-muted-foreground transition-transform ${
-                  sheetHeight === "full" ? "rotate-180" : ""
-                }`}
-              />
-            </button>
+        {/* Bottom Sheet Background */}
+        <div
+          className="bg-background rounded-t-[24px] shadow-2xl overflow-hidden h-full"
+          style={{
+            boxShadow: "0 -4px 12px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          {/* Grab Handle */}
+          <div className="flex justify-center py-3 cursor-grab active:cursor-grabbing">
+            <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
           </div>
 
-          {filteredRestaurants.length === 0 ? (
-            <div className="text-center py-12">
-              <IconMapPinOff className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">
+          {/* Sheet Content */}
+          <div className="px-4 pb-20 overflow-y-auto h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3>
                 {searchedFood
-                  ? `주변에 '${searchedFood}'을(를) 파는 식당이 없어요.`
-                  : "주변에 해당 음식점이 없어요."}
-                <br />
-                범위를 넓혀보세요.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredRestaurants.map((restaurant) => (
-                <RestaurantCard
-                  key={restaurant.id}
-                  restaurant={restaurant}
-                  onClick={() => handleRestaurantClick(restaurant)}
-                  onBookmark={() => {}}
+                  ? `'${searchedFood}' 파는 곳`
+                  : selectedCategory
+                  ? `${selectedCategory} 음식점`
+                  : "추천 음식점"}
+                <span className="text-muted-foreground ml-2">
+                  ({filteredRestaurants.length})
+                </span>
+              </h3>
+              <button
+                onClick={() =>
+                  setSheetHeight(sheetHeight === "full" ? "half" : "full")
+                }
+                className="p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
+              >
+                <IconChevronUp
+                  className={`w-5 h-5 text-muted-foreground transition-transform ${
+                    sheetHeight === "full" ? "rotate-180" : ""
+                  }`}
                 />
-              ))}
+              </button>
             </div>
-          )}
+
+            {filteredRestaurants.length === 0 ? (
+              <div className="text-center py-12">
+                <IconMapPinOff className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">
+                  {searchedFood
+                    ? `주변에 '${searchedFood}'을(를) 파는 식당이 없어요.`
+                    : "주변에 해당 음식점이 없어요."}
+                  <br />
+                  범위를 넓혀보세요.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredRestaurants.map((restaurant) => (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    restaurant={restaurant}
+                    onClick={() => handleRestaurantClick(restaurant)}
+                    onBookmark={() => {}}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Current Location Button */}
+        <div className="absolute right-4 -top-16">
+          <CurrentLocationButton
+            onClick={moveToCurrentLocation}
+            isLoading={isLocationLoading}
+            disabled={isLocationLoading}
+          />
+        </div>
+
+        {/* Location Error Toast */}
+        {locationError && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            data-testid="location-error-toast"
+            className="absolute right-20 -top-14 bg-destructive text-destructive-foreground px-4 py-2 rounded-lg shadow-lg text-sm"
+          >
+            {locationError}
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Restaurant Detail Modal */}
