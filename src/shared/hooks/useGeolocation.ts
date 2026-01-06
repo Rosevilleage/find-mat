@@ -70,20 +70,21 @@ export function useGeolocation(): UseGeolocationReturn {
       },
       (err) => {
         // 에러 발생 시 서울 좌표 사용
-        let errorMessage = "Failed to get location";
+        let errorMessage = "위치 정보를 가져올 수 없습니다";
 
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            errorMessage = "User denied location permission";
+            errorMessage = "위치 권한이 거부되었습니다. 서울 지역으로 검색합니다.";
             break;
           case err.POSITION_UNAVAILABLE:
-            errorMessage = "Location information unavailable";
+            errorMessage = "위치 정보를 사용할 수 없습니다. 서울 지역으로 검색합니다.";
             break;
           case err.TIMEOUT:
-            errorMessage = "Location request timed out";
+            errorMessage = "위치 요청 시간이 초과되었습니다. 서울 지역으로 검색합니다.";
             break;
         }
 
+        console.warn("⚠️ 위치 정보 에러:", errorMessage);
         setError(errorMessage);
         setCoordinates(SEOUL_COORDINATES);
         setIsLoading(false);

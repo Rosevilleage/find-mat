@@ -28,5 +28,17 @@ export {
   type UpdateMarkerStyleOptions,
 } from "./marker-manager";
 
+// Places 서비스
+export {
+  createPlacesService,
+  searchPlacesByKeyword,
+  isSearchSuccess,
+  isSearchEmpty,
+  isSearchError,
+  type PlacesSearchResult,
+  type SearchPlacesOptions,
+  type SearchPlacesResponse,
+} from "./places-service";
+
 // 타입 정의 (re-export)
 export type {} from "./types";

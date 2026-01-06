@@ -46,6 +46,16 @@ declare global {
           handler: (...args: unknown[]) => void
         ) => void;
       };
+
+      // Places 서비스 클래스
+      services: {
+        Places: new (map?: kakao.maps.Map) => kakao.maps.services.Places;
+        Status: {
+          OK: string;
+          ZERO_RESULT: string;
+          ERROR: string;
+        };
+      };
     };
   };
 
@@ -113,6 +123,76 @@ declare global {
     interface Size {
       // 추후 필요시 메서드 추가 가능
       readonly _brand: "Size";
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace services {
+      // Places 검색 결과 인터페이스
+      interface PlacesSearchResult {
+        id: string;
+        place_name: string;
+        category_name: string;
+        category_group_code: string;
+        category_group_name: string;
+        phone: string;
+        address_name: string;
+        road_address_name: string;
+        x: string; // 경도 (longitude)
+        y: string; // 위도 (latitude)
+        place_url: string;
+        distance: string;
+      }
+
+      // Pagination 인터페이스
+      interface Pagination {
+        current: number;
+        totalCount: number;
+        hasNextPage: boolean;
+        hasPrevPage: boolean;
+        gotoPage: (page: number) => void;
+        gotoFirst: () => void;
+        gotoLast: () => void;
+        nextPage: () => void;
+        prevPage: () => void;
+      }
+
+      // Places 검색 콜백 타입
+      type PlacesSearchCallback = (
+        data: PlacesSearchResult[],
+        status: string,
+        pagination: Pagination
+      ) => void;
+
+      // Places 검색 옵션
+      interface PlacesSearchOptions {
+        location?: LatLng;
+        radius?: number;
+        bounds?: LatLngBounds;
+        page?: number;
+        size?: number;
+        sort?: string;
+        category_group_code?: string;
+      }
+
+      // LatLngBounds 인터페이스
+      interface LatLngBounds {
+        // 추후 필요시 메서드 추가 가능
+        readonly _brand: "LatLngBounds";
+      }
+
+      // Places 서비스 인터페이스
+      interface Places {
+        keywordSearch(
+          keyword: string,
+          callback: PlacesSearchCallback,
+          options?: PlacesSearchOptions
+        ): void;
+        categorySearch(
+          code: string,
+          callback: PlacesSearchCallback,
+          options?: PlacesSearchOptions
+        ): void;
+      }
     }
   }
 }

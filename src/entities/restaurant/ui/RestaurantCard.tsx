@@ -7,19 +7,24 @@ interface RestaurantCardProps {
   restaurant: Restaurant;
   onClick: () => void;
   onBookmark?: () => void;
+  isSelected?: boolean;
 }
 
 export function RestaurantCard({
   restaurant,
   onClick,
   onBookmark,
+  isSelected = false,
 }: RestaurantCardProps) {
   return (
     <motion.div
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={cn(
-        "bg-card rounded-2xl overflow-hidden shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
+        "bg-card rounded-2xl overflow-hidden shadow-sm border cursor-pointer hover:shadow-md transition-all",
+        isSelected
+          ? "border-primary border-2 shadow-md bg-primary/5"
+          : "border-border"
       )}
     >
       <div className="flex gap-3 p-3">

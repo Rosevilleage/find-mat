@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { AnimatePresence } from "framer-motion";
 import { SearchBar } from "@/features/search-restaurant";
 import { CategoryChips } from "@/features/select-category";
+import { usePlacesSearchQuery } from "@/features/search-food-places";
 import {
   MapView,
   CurrentLocationButton,
@@ -38,10 +39,34 @@ export function MapScreen({
   const [searchParams] = useSearchParams();
 
   // 사용자 위치 가져오기 (실패 시 서울 기본 좌표 사용)
-  const { coordinates: userLocation } = useGeolocation();
+  const { coordinates: userLocation, error: geoError } = useGeolocation();
+
+  // 위치 에러가 있으면 콘솔에 로그
+  React.useEffect(() => {
+    if (geoError) {
+      console.warn("📍 위치 정보:", geoError);
+    }
+  }, [geoError]);
 
   // URL에서 검색된 음식 읽기
   const searchedFood = searchParams.get("food");
+
+  // Places API로 음식점 검색 (URL에 food 파라미터가 있을 때만)
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    error: searchError,
+  } = usePlacesSearchQuery({
+    keyword: searchedFood || "",
+    location: userLocation ?? undefined,
+    radius: 5000, // 5km 반경
+    enabled: !!searchedFood, // food 파라미터가 있을 때만 검색 실행
+  });
+
+  // 검색 결과 추출 (useMemo로 래핑하여 불필요한 재계산 방지)
+  const searchResults = useMemo(() => {
+    return searchData?.results || [];
+  }, [searchData]);
 
   // 로컬 상태 관리
   const [restaurants, setRestaurants] =
@@ -80,19 +105,32 @@ export function MapScreen({
     return Array.from(categoryMap.values()).sort((a, b) => b.rating - a.rating);
   };
 
+  // 검색 결과를 Restaurant 타입으로 변환
+  const searchedRestaurants = useMemo((): Restaurant[] => {
+    if (!searchedFood || searchResults.length === 0) {
+      return [];
+    }
+
+    return searchResults.map((place) => ({
+      id: place.id,
+      name: place.name,
+      category: place.category.split(" > ").pop() || "기타",
+      distanceText: place.distance ? `${(place.distance / 1000).toFixed(1)}km` : "거리 정보 없음",
+      priceLevel: "정보 없음",
+      rating: 0, // Places API는 평점 정보를 제공하지 않음
+      isOpen: true, // Places API는 영업 시간 정보를 제공하지 않음
+      image: undefined,
+      menuItems: [],
+      isBookmarked: false,
+    }));
+  }, [searchedFood, searchResults]);
+
   // 검색된 음식을 파는 식당 필터링
   let filteredRestaurants = restaurants;
 
   if (searchedFood) {
-    // 검색된 음식이 있으면 카테고리 필터링 무시
-    // 검색된 음식을 메뉴에 포함하는 식당들
-    filteredRestaurants = restaurants.filter((r) =>
-      r.menuItems?.some((item) => item.includes(searchedFood))
-    );
-    // 평점 순으로 정렬
-    filteredRestaurants = [...filteredRestaurants].sort(
-      (a, b) => b.rating - a.rating
-    );
+    // Places API 검색 결과 사용
+    filteredRestaurants = searchedRestaurants;
   } else if (selectedCategory) {
     // 카테고리로 필터링
     filteredRestaurants = restaurants.filter(
@@ -104,8 +142,20 @@ export function MapScreen({
   }
 
   const mockMapRestaurants = React.useMemo(() => {
-    // 각 레스토랑에 서울 근처 고정 위치 할당 (ID 기반 해시)
-    return filteredRestaurants.slice(0, 8).map((r) => {
+    // Places API 검색 결과인 경우 실제 좌표 사용
+    if (searchedFood && searchResults.length > 0) {
+      const markers = searchResults.map((place) => ({
+        id: place.id,
+        name: place.name,
+        lat: place.lat,
+        lng: place.lng,
+      }));
+      console.log("🗺️ Places API 마커:", markers.length, "개", markers);
+      return markers;
+    }
+
+    // MOCK 데이터인 경우 서울 근처 고정 위치 할당 (ID 기반 해시)
+    const mockMarkers = filteredRestaurants.slice(0, 8).map((r) => {
       const hash = r.id
         .split("")
         .reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -118,7 +168,9 @@ export function MapScreen({
         lng: 126.928 + lngOffset, // 126.928 ~ 127.028
       };
     });
-  }, [filteredRestaurants]);
+    console.log("🗺️ MOCK 마커:", mockMarkers.length, "개");
+    return mockMarkers;
+  }, [searchedFood, searchResults, filteredRestaurants]);
 
   const handlePinClick = (restaurant: {
     id: string;
@@ -126,15 +178,49 @@ export function MapScreen({
     lat: number;
     lng: number;
   }) => {
-    const foundRestaurant = restaurants.find((r) => r.id === restaurant.id);
-    if (foundRestaurant) {
-      setSelectedRestaurant(foundRestaurant);
+    console.log("🖱️ 마커 클릭:", restaurant);
+
+    // Places API 검색 결과인 경우
+    if (searchedFood && searchedRestaurants.length > 0) {
+      const foundRestaurant = searchedRestaurants.find((r) => r.id === restaurant.id);
+      if (foundRestaurant) {
+        console.log("✅ Places API 음식점 발견:", foundRestaurant);
+        setSelectedRestaurant(foundRestaurant);
+
+        // 해당 위치로 지도 이동
+        if (mapInstance) {
+          const position = new kakao.maps.LatLng(restaurant.lat, restaurant.lng);
+          mapInstance.panTo(position);
+        }
+      }
+    } else {
+      // MOCK 데이터인 경우
+      const foundRestaurant = restaurants.find((r) => r.id === restaurant.id);
+      if (foundRestaurant) {
+        console.log("✅ MOCK 음식점 발견:", foundRestaurant);
+        setSelectedRestaurant(foundRestaurant);
+
+        // 해당 위치로 지도 이동
+        if (mapInstance) {
+          const position = new kakao.maps.LatLng(restaurant.lat, restaurant.lng);
+          mapInstance.panTo(position);
+        }
+      }
     }
+
     setSheetHeight("half");
   };
 
   const handleRestaurantClick = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
+
+    // 해당 음식점의 마커 위치로 지도 이동
+    const marker = mockMapRestaurants.find((m) => m.id === restaurant.id);
+    if (marker && mapInstance) {
+      const position = new kakao.maps.LatLng(marker.lat, marker.lng);
+      mapInstance.panTo(position);
+      console.log("🗺️ 지도 이동:", restaurant.name, marker.lat, marker.lng);
+    }
   };
 
   const handleBackToHome = () => {
@@ -311,16 +397,76 @@ export function MapScreen({
               </button>
             </div>
 
-            {filteredRestaurants.length === 0 ? (
-              <div className="text-center py-12">
-                <IconMapPinOff className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  {searchedFood
-                    ? `주변에 '${searchedFood}'을(를) 파는 식당이 없어요.`
-                    : "주변에 해당 음식점이 없어요."}
-                  <br />
-                  범위를 넓혀보세요.
+            {isSearchLoading ? (
+              <div className="space-y-3">
+                {/* 스켈레톤 로더 */}
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-card rounded-xl p-4 border animate-pulse"
+                  >
+                    <div className="flex gap-3">
+                      {/* 이미지 스켈레톤 */}
+                      <div className="w-20 h-20 bg-muted rounded-lg" />
+                      <div className="flex-1 space-y-2">
+                        {/* 제목 스켈레톤 */}
+                        <div className="h-5 bg-muted rounded w-3/4" />
+                        {/* 카테고리 스켈레톤 */}
+                        <div className="h-4 bg-muted rounded w-1/2" />
+                        {/* 거리 스켈레톤 */}
+                        <div className="h-4 bg-muted rounded w-1/4" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : searchError ? (
+              <div className="text-center py-12 px-4">
+                <IconMapPinOff className="w-12 h-12 text-destructive mx-auto mb-3" />
+                <p className="text-destructive mb-2 font-medium">검색 중 오류가 발생했습니다</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchError instanceof Error
+                    ? searchError.message
+                    : "알 수 없는 오류가 발생했습니다."}
                 </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : filteredRestaurants.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <IconMapPinOff className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2">
+                  {searchedFood
+                    ? `'${searchedFood}' 검색 결과가 없어요`
+                    : "음식점을 찾을 수 없어요"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {searchedFood
+                    ? `주변 5km 내에 '${searchedFood}'을(를) 파는 음식점이 없습니다.`
+                    : "다른 카테고리를 선택해보세요."}
+                </p>
+                {searchedFood && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleClearSearch}
+                      className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
+                    >
+                      전체 음식점 보기
+                    </button>
+                    <button
+                      onClick={handleBackToHome}
+                      className="w-full px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
+                    >
+                      다른 음식 선택하기
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -330,6 +476,7 @@ export function MapScreen({
                     restaurant={restaurant}
                     onClick={() => handleRestaurantClick(restaurant)}
                     onBookmark={() => {}}
+                    isSelected={selectedRestaurant?.id === restaurant.id}
                   />
                 ))}
               </div>

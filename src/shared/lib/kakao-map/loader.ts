@@ -79,7 +79,7 @@ export function loadKakaoMapSDK(): Promise<void> {
     // 새 스크립트 태그 생성
     const script = document.createElement("script");
     script.type = "text/javascript";
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&libraries=services&autoload=false`;
     script.async = true;
 
     // 로드 성공 핸들러
