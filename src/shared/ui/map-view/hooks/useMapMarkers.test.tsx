@@ -23,15 +23,21 @@ describe('useMapMarkers with custom images', () => {
     mockMap = {
       setCenter: vi.fn(),
       getCenter: vi.fn(),
-    };
+      setLevel: vi.fn(),
+      getLevel: vi.fn(),
+      panTo: vi.fn(),
+    } as unknown as kakao.maps.Map;
 
     // Mock marker instance
     mockMarker = {
       setMap: vi.fn(),
+      getMap: vi.fn(),
       setImage: vi.fn(),
       setZIndex: vi.fn(),
       getPosition: vi.fn(),
-    };
+      setPosition: vi.fn(),
+      setTitle: vi.fn(),
+    } as unknown as kakao.maps.Marker;
 
     // Mock kakao.maps.Marker constructor
     vi.mocked(kakao.maps.Marker).mockImplementation(
@@ -40,7 +46,8 @@ describe('useMapMarkers with custom images', () => {
 
     // Mock kakao.maps.LatLng
     vi.mocked(kakao.maps.LatLng).mockImplementation(
-      (lat: number, lng: number) => ({ lat, lng } as kakao.maps.LatLng)
+      (lat: number, lng: number) =>
+        ({ lat, lng } as unknown as kakao.maps.LatLng)
     );
 
     // Mock createMarker to return our mock marker
@@ -196,6 +203,144 @@ describe('useMapMarkers with custom images', () => {
           normalImageSrc: '/images/markers/marker-normal.svg',
         })
       );
+    });
+  });
+
+  describe('엣지 케이스', () => {
+    it('빈 레스토랑 배열이어도 에러가 발생하지 않아야 함', () => {
+      expect(() => {
+        renderHook(() =>
+          useMapMarkers({
+            map: mockMap,
+            restaurants: [],
+            selectedId: undefined,
+          })
+        );
+      }).not.toThrow();
+
+      // updateMarkerStyle이 호출되지 않아야 함
+      expect(markerManager.updateMarkerStyle).not.toHaveBeenCalled();
+    });
+
+    it('레스토랑이 추가되면 마커를 생성해야 함', () => {
+      const { rerender } = renderHook(
+        ({ restaurants: r }) =>
+          useMapMarkers({
+            map: mockMap,
+            restaurants: r,
+            selectedId: undefined,
+          }),
+        { initialProps: { restaurants: [] as MapRestaurant[] } }
+      );
+
+      // 초기에는 마커 없음
+      expect(markerManager.createMarker).not.toHaveBeenCalled();
+
+      // 레스토랑 추가
+      rerender({ restaurants });
+
+      // 마커가 생성되어야 함
+      expect(markerManager.createMarker).toHaveBeenCalledTimes(2);
+    });
+
+    it('지도와 selectedId가 동시에 변경되어도 정상 작동해야 함', () => {
+      const newMockMap = {
+        setCenter: vi.fn(),
+        getCenter: vi.fn(),
+      } as unknown as kakao.maps.Map;
+
+      const { rerender } = renderHook(
+        ({ map, selectedId }) =>
+          useMapMarkers({
+            map,
+            restaurants,
+            selectedId,
+          }),
+        { initialProps: { map: mockMap, selectedId: undefined as string | undefined } }
+      );
+
+      vi.clearAllMocks();
+
+      // 지도와 selectedId 동시 변경
+      rerender({ map: newMockMap, selectedId: '1' });
+
+      // 정상적으로 처리되어야 함 (에러 없음)
+      expect(() => rerender({ map: newMockMap, selectedId: '1' })).not.toThrow();
+    });
+
+    it('유효하지 않은 selectedId는 무시되어야 함', () => {
+      renderHook(() =>
+        useMapMarkers({
+          map: mockMap,
+          restaurants,
+          selectedId: 'non-existent-id',
+        })
+      );
+
+      // 모든 마커가 일반 스타일이어야 함
+      const calls = vi.mocked(markerManager.updateMarkerStyle).mock.calls;
+      const allNormal = calls.every((call) => call[1] === false);
+      expect(allNormal).toBe(true);
+    });
+
+    it('대량의 레스토랑 (100개)도 처리할 수 있어야 함', () => {
+      const manyRestaurants: MapRestaurant[] = Array.from({ length: 100 }, (_, i) => ({
+        id: `restaurant-${i}`,
+        name: `Restaurant ${i}`,
+        lat: 37.5 + i * 0.01,
+        lng: 127.0 + i * 0.01,
+      }));
+
+      expect(() => {
+        renderHook(() =>
+          useMapMarkers({
+            map: mockMap,
+            restaurants: manyRestaurants,
+            selectedId: 'restaurant-50',
+          })
+        );
+      }).not.toThrow();
+
+      // 100개의 마커가 생성되어야 함
+      expect(markerManager.createMarker).toHaveBeenCalledTimes(100);
+
+      // updateMarkerStyle이 100번 호출되어야 함
+      expect(markerManager.updateMarkerStyle).toHaveBeenCalledTimes(100);
+    });
+
+    it('restaurants prop이 변경되면 기존 마커를 제거하고 새로 생성해야 함', () => {
+      const { rerender } = renderHook(
+        ({ restaurants: r }) =>
+          useMapMarkers({
+            map: mockMap,
+            restaurants: r,
+            selectedId: undefined,
+          }),
+        { initialProps: { restaurants } }
+      );
+
+      // 초기 마커 생성 확인
+      expect(markerManager.createMarker).toHaveBeenCalledTimes(2);
+
+      vi.clearAllMocks();
+
+      // 다른 레스토랑으로 변경
+      const newRestaurants: MapRestaurant[] = [
+        { id: '3', name: 'Restaurant 3', lat: 37.7, lng: 127.2 },
+      ];
+      rerender({ restaurants: newRestaurants });
+
+      // 기존 마커 제거 (setMap(null) 호출됨)
+      expect(mockMarker.setMap).toHaveBeenCalled();
+      const setMapCalls = vi.mocked(mockMarker.setMap).mock.calls;
+      // null이 포함되어 있어야 함 (마커 제거)
+      const hasNullCall = setMapCalls.some(
+        (call: [kakao.maps.Map | null]) => call[0] === null
+      );
+      expect(hasNullCall).toBe(true);
+
+      // 새 마커 생성
+      expect(markerManager.createMarker).toHaveBeenCalledTimes(1);
     });
   });
 });
