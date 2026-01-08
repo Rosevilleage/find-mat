@@ -2,8 +2,10 @@ import { useEffect, useRef } from "react";
 import {
   createMarker,
   addMarkerClickEvent,
+  updateMarkerStyle,
   type MarkerPosition,
 } from "@/shared/lib/kakao-map";
+import { MARKER_CONFIG } from "@/shared/config";
 
 /**
  * 지도에 표시할 레스토랑 정보
@@ -124,15 +126,15 @@ export function useMapMarkers(options: UseMapMarkersOptions): void {
       return;
     }
 
-    // 모든 마커의 스타일 업데이트
+    // 모든 마커의 스타일 업데이트 (커스텀 이미지 사용)
     markersRef.current.forEach(({ marker, restaurant }) => {
       const isSelected = restaurant.id === selectedId;
 
-      // 커스텀 마커 이미지 사용하지 않고 기본 마커 사용
-      // updateMarkerStyle을 사용하려면 커스텀 이미지가 필요하므로
-      // 현재는 z-index만 변경
-      const zIndex = isSelected ? 100 : 1;
-      marker.setZIndex(zIndex);
+      updateMarkerStyle(marker, isSelected, {
+        selectedImageSrc: MARKER_CONFIG.selected.src,
+        normalImageSrc: MARKER_CONFIG.normal.src,
+        imageSize: MARKER_CONFIG.size,
+      });
     });
   }, [map, selectedId]);
 }

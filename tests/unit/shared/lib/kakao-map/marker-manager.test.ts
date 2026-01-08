@@ -255,4 +255,76 @@ describe('marker-manager', () => {
       expect(callback).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('updateMarkerStyle with MARKER_CONFIG', () => {
+    it('should work with MARKER_CONFIG settings', async () => {
+      // Import는 동적으로 수행
+      const { MARKER_CONFIG } = await import('@/shared/config');
+
+      updateMarkerStyle(mockMarker, true, {
+        selectedImageSrc: MARKER_CONFIG.selected.src,
+        normalImageSrc: MARKER_CONFIG.normal.src,
+        imageSize: MARKER_CONFIG.size,
+      });
+
+      expect(kakao.maps.Size).toHaveBeenCalledWith(
+        MARKER_CONFIG.size.width,
+        MARKER_CONFIG.size.height
+      );
+      expect(kakao.maps.MarkerImage).toHaveBeenCalledWith(
+        MARKER_CONFIG.selected.src,
+        expect.anything(),
+        undefined
+      );
+      expect(mockMarker.setImage).toHaveBeenCalled();
+      expect(mockMarker.setZIndex).toHaveBeenCalledWith(100);
+    });
+
+    it('should use correct image paths from MARKER_CONFIG', async () => {
+      const { MARKER_CONFIG } = await import('@/shared/config');
+
+      // 선택 상태
+      updateMarkerStyle(mockMarker, true, {
+        selectedImageSrc: MARKER_CONFIG.selected.src,
+        normalImageSrc: MARKER_CONFIG.normal.src,
+        imageSize: MARKER_CONFIG.size,
+      });
+
+      expect(kakao.maps.MarkerImage).toHaveBeenCalledWith(
+        '/images/markers/marker-selected.svg',
+        expect.anything(),
+        undefined
+      );
+
+      vi.mocked(kakao.maps.MarkerImage).mockClear();
+
+      // 일반 상태
+      updateMarkerStyle(mockMarker, false, {
+        selectedImageSrc: MARKER_CONFIG.selected.src,
+        normalImageSrc: MARKER_CONFIG.normal.src,
+        imageSize: MARKER_CONFIG.size,
+      });
+
+      expect(kakao.maps.MarkerImage).toHaveBeenCalledWith(
+        '/images/markers/marker-normal.svg',
+        expect.anything(),
+        undefined
+      );
+    });
+
+    it('should use correct marker size (48x68)', async () => {
+      const { MARKER_CONFIG } = await import('@/shared/config');
+
+      expect(MARKER_CONFIG.size.width).toBe(48);
+      expect(MARKER_CONFIG.size.height).toBe(68);
+
+      updateMarkerStyle(mockMarker, true, {
+        selectedImageSrc: MARKER_CONFIG.selected.src,
+        normalImageSrc: MARKER_CONFIG.normal.src,
+        imageSize: MARKER_CONFIG.size,
+      });
+
+      expect(kakao.maps.Size).toHaveBeenCalledWith(48, 68);
+    });
+  });
 });

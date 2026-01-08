@@ -37,9 +37,9 @@ export const MARKER_CONFIG = {
   /** 마커 이미지 크기 (픽셀) */
   size: {
     /** 마커 너비 */
-    width: 32,
+    width: 48,
     /** 마커 높이 */
-    height: 40,
+    height: 68,
   },
 } as const;
 
