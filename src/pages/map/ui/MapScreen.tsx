@@ -23,6 +23,7 @@ import {
 import { Button } from "@/shared/ui/kit/button";
 import { CATEGORIES } from "@/shared/config";
 import { useGeolocation } from "@/shared/hooks";
+import { cn } from "@/shared/lib/utils";
 
 interface MapScreenProps {
   hasLocationPermission?: boolean;
@@ -82,7 +83,9 @@ export function MapScreen({
           return;
         }
 
-        const result = await navigator.permissions.query({ name: "geolocation" });
+        const result = await navigator.permissions.query({
+          name: "geolocation",
+        });
 
         console.log("🔐 위치 권한 상태:", result.state);
 
@@ -90,7 +93,11 @@ export function MapScreen({
         result.addEventListener("change", () => {
           console.log("🔐 위치 권한 상태 변경:", result.state);
 
-          if (result.state === "granted" && onShowToast && !hasShownPermissionToast) {
+          if (
+            result.state === "granted" &&
+            onShowToast &&
+            !hasShownPermissionToast
+          ) {
             hasShownPermissionToast = true;
             onShowToast("위치 권한이 허용되었습니다.", "success");
             // 페이지 새로고침으로 위치 다시 가져오기
@@ -137,6 +144,7 @@ export function MapScreen({
     "half"
   );
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   // 현재 위치 기능
   const {
@@ -174,7 +182,9 @@ export function MapScreen({
       id: place.id,
       name: place.name,
       category: place.category.split(" > ").pop() || "기타",
-      distanceText: place.distance ? `${(place.distance / 1000).toFixed(1)}km` : "거리 정보 없음",
+      distanceText: place.distance
+        ? `${(place.distance / 1000).toFixed(1)}km`
+        : "거리 정보 없음",
       priceLevel: "정보 없음",
       rating: 0, // Places API는 평점 정보를 제공하지 않음
       isOpen: true, // Places API는 영업 시간 정보를 제공하지 않음
@@ -241,14 +251,19 @@ export function MapScreen({
 
     // Places API 검색 결과인 경우
     if (searchedFood && searchedRestaurants.length > 0) {
-      const foundRestaurant = searchedRestaurants.find((r) => r.id === restaurant.id);
+      const foundRestaurant = searchedRestaurants.find(
+        (r) => r.id === restaurant.id
+      );
       if (foundRestaurant) {
         console.log("✅ Places API 음식점 발견:", foundRestaurant);
         setSelectedRestaurant(foundRestaurant);
 
         // 해당 위치로 지도 이동
         if (mapInstance) {
-          const position = new kakao.maps.LatLng(restaurant.lat, restaurant.lng);
+          const position = new kakao.maps.LatLng(
+            restaurant.lat,
+            restaurant.lng
+          );
           mapInstance.panTo(position);
         }
       }
@@ -261,7 +276,10 @@ export function MapScreen({
 
         // 해당 위치로 지도 이동
         if (mapInstance) {
-          const position = new kakao.maps.LatLng(restaurant.lat, restaurant.lng);
+          const position = new kakao.maps.LatLng(
+            restaurant.lat,
+            restaurant.lng
+          );
           mapInstance.panTo(position);
         }
       }
@@ -293,6 +311,14 @@ export function MapScreen({
     setSelectedCategory(null);
   };
 
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      // 검색 로직 (기존 홈 화면과 동일)
+      navigate(`/map?food=${encodeURIComponent(query)}`);
+      setIsSearchExpanded(false);
+    }
+  };
+
   const handleBookmark = (restaurantId: string) => {
     setRestaurants((prev) =>
       prev.map((r) =>
@@ -311,8 +337,8 @@ export function MapScreen({
 
   const sheetHeights = {
     collapsed: "120px",
-    half: "45%",
-    full: "85%",
+    half: "45dvh",
+    full: "calc(100dvh - 120px)",
   };
 
   if (!hasLocationPermission) {
@@ -341,52 +367,138 @@ export function MapScreen({
   }
 
   return (
-    <div className="relative flex flex-col h-full">
-      {/* Back Button */}
-      <button
-        onClick={handleBackToHome}
-        className="absolute top-5 left-2 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors cursor-pointer"
-      >
-        <IconChevronLeft className="w-5 h-5 text-foreground" />
-      </button>
-
-      {/* Search Bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 py-4 space-y-3">
-        <SearchBar onFilterClick={() => {}} />
-
-        {/* 검색된 음식 표시 */}
-        {searchedFood && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2"
+    <div className="relative flex flex-col h-screen overflow-hidden">
+      {/* Back Button - 검색창 확장 시 숨김 */}
+      <AnimatePresence>
+        {!isSearchExpanded && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={handleBackToHome}
+            className="absolute top-2 left-2 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors cursor-pointer"
           >
-            <span className="text-sm flex-1">
-              <span className="text-primary">'{searchedFood}'</span>을(를) 파는
-              식당
-            </span>
-            <button
-              onClick={handleClearSearch}
-              className="p-1 hover:bg-primary/20 rounded-lg transition-colors cursor-pointer"
-            >
-              <IconX className="w-4 h-4 text-primary" />
-            </button>
-          </motion.div>
+            <IconChevronLeft className="w-5 h-5 text-foreground" />
+          </motion.button>
         )}
+      </AnimatePresence>
 
-        {!searchedFood && (
-          <CategoryChips
-            categories={CATEGORIES}
-            selected={selectedCategory}
-            onSelect={(cat) => {
-              setSelectedCategory(cat === selectedCategory ? null : cat);
-            }}
-          />
-        )}
+      {/* Header - 모바일/데스크톱 분리 */}
+      <div className="absolute top-0 left-0 right-0 z-20">
+        {/* 모바일 레이아웃 */}
+        <div className="tablet:hidden">
+          <AnimatePresence mode="wait">
+            {!isSearchExpanded ? (
+              <>
+                <motion.div
+                  key="category-chips"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 px-2"
+                >
+                  <div
+                    className={cn(
+                      "flex-1 overflow-hidden pt-3 pl-13",
+                      isSearchExpanded && "px-0"
+                    )}
+                  >
+                    <CategoryChips
+                      categories={CATEGORIES}
+                      selected={selectedCategory}
+                      onSelect={(cat) => {
+                        setSelectedCategory(
+                          cat === selectedCategory ? null : cat
+                        );
+                      }}
+                    />
+                  </div>
+                  <SearchBar
+                    variant="icon"
+                    isExpanded={false}
+                    onExpand={() => {
+                      setIsSearchExpanded(true);
+                      setSheetHeight("collapsed");
+                    }}
+                  />
+                </motion.div>
+                {searchedFood && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 bg-background border border-primary/20 rounded-xl px-4 py-2"
+                  >
+                    <span className="text-sm flex-1">
+                      <span className="text-primary">'{searchedFood}'</span>
+                      을(를) 파는 식당
+                    </span>
+                    <button
+                      onClick={handleClearSearch}
+                      className="p-1 hover:bg-primary/20 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <IconX className="w-4 h-4 text-primary" />
+                    </button>
+                  </motion.div>
+                )}
+              </>
+            ) : (
+              <motion.div
+                key="search-bar"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="px-2 pt-2"
+              >
+                <SearchBar
+                  variant="icon"
+                  isExpanded={true}
+                  onCollapse={() => setIsSearchExpanded(false)}
+                  onSearch={handleSearch}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* 데스크톱 레이아웃 (기존 유지) */}
+        <div className="hidden tablet:block space-y-3">
+          <SearchBar onFilterClick={() => {}} />
+
+          {/* 검색된 음식 표시 */}
+          {searchedFood && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2"
+            >
+              <span className="text-sm flex-1">
+                <span className="text-primary">'{searchedFood}'</span>을(를)
+                파는 식당
+              </span>
+              <button
+                onClick={handleClearSearch}
+                className="p-1 hover:bg-primary/20 rounded-lg transition-colors cursor-pointer"
+              >
+                <IconX className="w-4 h-4 text-primary" />
+              </button>
+            </motion.div>
+          )}
+
+          {!searchedFood && (
+            <CategoryChips
+              categories={CATEGORIES}
+              selected={selectedCategory}
+              onSelect={(cat) => {
+                setSelectedCategory(cat === selectedCategory ? null : cat);
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* Map */}
-      <div className="flex-1 pt-32">
+      <div className="flex-1 pt-18">
         <MapView
           restaurants={mockMapRestaurants}
           onPinClick={handlePinClick}
@@ -482,7 +594,9 @@ export function MapScreen({
             ) : searchError ? (
               <div className="text-center py-12 px-4">
                 <IconMapPinOff className="w-12 h-12 text-destructive mx-auto mb-3" />
-                <p className="text-destructive mb-2 font-medium">검색 중 오류가 발생했습니다</p>
+                <p className="text-destructive mb-2 font-medium">
+                  검색 중 오류가 발생했습니다
+                </p>
                 <p className="text-sm text-muted-foreground mb-4">
                   {searchError instanceof Error
                     ? searchError.message
