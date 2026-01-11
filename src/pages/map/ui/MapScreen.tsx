@@ -41,12 +41,71 @@ export function MapScreen({
   // 사용자 위치 가져오기 (실패 시 서울 기본 좌표 사용)
   const { coordinates: userLocation, error: geoError } = useGeolocation();
 
-  // 위치 에러가 있으면 콘솔에 로그
+  // 토스트 표시 여부 추적 (한 번만 표시하기 위함)
+  const hasShownToast = React.useRef(false);
+
+  // 위치 권한 상태 확인 및 사용자에게 알림 (한 번만)
   React.useEffect(() => {
-    if (geoError) {
+    if (geoError && !hasShownToast.current) {
       console.warn("📍 위치 정보:", geoError);
+
+      // 사용자에게 위치 권한 에러 표시
+      if (onShowToast) {
+        if (geoError.includes("거부")) {
+          onShowToast(
+            "위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.",
+            "error"
+          );
+        } else if (geoError.includes("사용할 수 없습니다")) {
+          // POSITION_UNAVAILABLE 에러 - 시스템 위치 서비스 비활성화
+          onShowToast(
+            "시스템 위치 서비스가 비활성화되어 있습니다. 시스템 설정에서 위치 서비스를 활성화해주세요.",
+            "error"
+          );
+        } else {
+          onShowToast(geoError, "error");
+        }
+        hasShownToast.current = true;
+      }
     }
-  }, [geoError]);
+  }, [geoError, onShowToast]);
+
+  // 위치 권한 상태 확인 (Permissions API 사용)
+  React.useEffect(() => {
+    let hasShownPermissionToast = false;
+
+    const checkPermission = async () => {
+      try {
+        // Permissions API가 지원되는지 확인
+        if (!navigator.permissions) {
+          console.warn("⚠️ Permissions API가 지원되지 않습니다.");
+          return;
+        }
+
+        const result = await navigator.permissions.query({ name: "geolocation" });
+
+        console.log("🔐 위치 권한 상태:", result.state);
+
+        // 권한 상태가 변경될 때마다 로그 (토스트는 한 번만)
+        result.addEventListener("change", () => {
+          console.log("🔐 위치 권한 상태 변경:", result.state);
+
+          if (result.state === "granted" && onShowToast && !hasShownPermissionToast) {
+            hasShownPermissionToast = true;
+            onShowToast("위치 권한이 허용되었습니다.", "success");
+            // 페이지 새로고침으로 위치 다시 가져오기
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        });
+      } catch (error) {
+        console.warn("⚠️ 위치 권한 확인 실패:", error);
+      }
+    };
+
+    checkPermission();
+  }, [onShowToast]);
 
   // URL에서 검색된 음식 읽기
   const searchedFood = searchParams.get("food");

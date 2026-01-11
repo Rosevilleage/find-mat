@@ -24,17 +24,17 @@ export interface UseCurrentLocationReturn {
 /** 에러 메시지 상수 */
 const ERROR_MESSAGES = {
   NOT_SUPPORTED: "위치 정보를 사용할 수 없습니다",
-  PERMISSION_DENIED: "위치 권한이 거부되었습니다",
-  POSITION_UNAVAILABLE: "위치 정보를 사용할 수 없습니다",
-  TIMEOUT: "위치 요청 시간이 초과되었습니다",
+  PERMISSION_DENIED: "위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.",
+  POSITION_UNAVAILABLE: "시스템 위치 서비스가 비활성화되어 있습니다. 시스템 설정에서 활성화해주세요.",
+  TIMEOUT: "위치 요청 시간이 초과되었습니다. 다시 시도해주세요.",
   DEFAULT: "위치를 가져올 수 없습니다",
 } as const;
 
 /** Geolocation API 옵션 */
 const GEOLOCATION_OPTIONS: PositionOptions = {
-  enableHighAccuracy: true,
-  timeout: 5000,
-  maximumAge: 0,
+  enableHighAccuracy: false, // 빠른 응답을 위해 정확도 낮춤
+  timeout: 10000, // 10초로 늘림
+  maximumAge: 300000, // 5분 이내 캐시된 위치 사용 가능
 };
 
 /** 에러 토스트 표시 시간 (밀리초) */
@@ -81,7 +81,7 @@ export function useCurrentLocation(
   /**
    * 현재 위치로 지도 이동
    */
-  const moveToCurrentLocation = useCallback(() => {
+  const moveToCurrentLocation = useCallback(async () => {
     if (!map) {
       return;
     }
@@ -95,10 +95,37 @@ export function useCurrentLocation(
     setIsLoading(true);
     setError(null);
 
+    // 권한 상태 먼저 확인 (Permissions API 지원 브라우저만)
+    if (navigator.permissions) {
+      try {
+        const permissionStatus = await navigator.permissions.query({
+          name: "geolocation",
+        });
+
+        console.log("🔐 현재 위치 버튼 - 권한 상태:", permissionStatus.state);
+
+        // 권한이 거부된 경우 바로 에러 표시
+        if (permissionStatus.state === "denied") {
+          setError(ERROR_MESSAGES.PERMISSION_DENIED);
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn("⚠️ 권한 확인 실패:", error);
+        // 권한 확인 실패 시 계속 진행
+      }
+    }
+
     navigator.geolocation.getCurrentPosition(
       // 성공 콜백
       (position) => {
         const { latitude, longitude } = position.coords;
+
+        console.log("✅ 현재 위치로 이동:", {
+          lat: latitude,
+          lng: longitude,
+          accuracy: position.coords.accuracy,
+        });
 
         // 지도 중심을 현재 위치로 이동
         setCenter(map, latitude, longitude);
@@ -109,15 +136,23 @@ export function useCurrentLocation(
       (geolocationError) => {
         let errorMessage: string = ERROR_MESSAGES.DEFAULT;
 
+        console.error("❌ 현재 위치 버튼 - 에러 상세:", {
+          code: geolocationError.code,
+          message: geolocationError.message,
+        });
+
         switch (geolocationError.code) {
           case geolocationError.PERMISSION_DENIED:
             errorMessage = ERROR_MESSAGES.PERMISSION_DENIED;
+            console.warn("🚫 위치 권한이 거부되었습니다.");
             break;
           case geolocationError.POSITION_UNAVAILABLE:
             errorMessage = ERROR_MESSAGES.POSITION_UNAVAILABLE;
+            console.warn("📍 위치 정보를 사용할 수 없습니다.");
             break;
           case geolocationError.TIMEOUT:
             errorMessage = ERROR_MESSAGES.TIMEOUT;
+            console.warn("⏱️ 위치 요청 시간이 초과되었습니다 (10초)");
             break;
         }
 

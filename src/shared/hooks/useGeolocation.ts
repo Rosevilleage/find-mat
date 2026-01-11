@@ -58,9 +58,16 @@ export function useGeolocation(): UseGeolocationReturn {
       return;
     }
 
+    console.log("📍 위치 정보 요청 시작...");
+
     // 현재 위치 가져오기
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log("✅ 위치 정보 가져오기 성공:", {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
         setCoordinates({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -72,15 +79,28 @@ export function useGeolocation(): UseGeolocationReturn {
         // 에러 발생 시 서울 좌표 사용
         let errorMessage = "위치 정보를 가져올 수 없습니다";
 
+        console.error("❌ 위치 정보 에러 상세:", {
+          code: err.code,
+          message: err.message,
+          PERMISSION_DENIED: err.PERMISSION_DENIED,
+          POSITION_UNAVAILABLE: err.POSITION_UNAVAILABLE,
+          TIMEOUT: err.TIMEOUT,
+        });
+
         switch (err.code) {
           case err.PERMISSION_DENIED:
             errorMessage = "위치 권한이 거부되었습니다. 서울 지역으로 검색합니다.";
+            console.warn("🚫 브라우저에서 위치 권한이 거부되었습니다.");
             break;
           case err.POSITION_UNAVAILABLE:
             errorMessage = "위치 정보를 사용할 수 없습니다. 서울 지역으로 검색합니다.";
+            console.warn(
+              "📍 위치 정보를 사용할 수 없습니다. macOS 사용자의 경우 '시스템 환경설정 > 보안 및 개인 정보 보호 > 개인 정보 보호 > 위치 서비스'에서 위치 서비스가 활성화되어 있는지 확인하세요."
+            );
             break;
           case err.TIMEOUT:
             errorMessage = "위치 요청 시간이 초과되었습니다. 서울 지역으로 검색합니다.";
+            console.warn("⏱️ 위치 정보 요청 시간이 초과되었습니다 (10초)");
             break;
         }
 
@@ -90,9 +110,9 @@ export function useGeolocation(): UseGeolocationReturn {
         setIsLoading(false);
       },
       {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+        enableHighAccuracy: false, // 빠른 응답을 위해 정확도 낮춤
+        timeout: 10000, // 10초로 늘림
+        maximumAge: 300000, // 5분 이내 캐시된 위치 사용 가능
       }
     );
   }, []);
