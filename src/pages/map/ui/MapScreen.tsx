@@ -236,19 +236,18 @@ export function MapScreen({
 
   const handleDragEnd = (info: { offset: { y: number } }) => {
     if (info.offset.y > 100) {
-      setSheetHeight("collapsed");
+      setSheetHeight(sheetHeight === "half" ? "collapsed" : "half");
     } else if (info.offset.y < -100) {
       setSheetHeight(sheetHeight === "half" ? "full" : "half");
     }
   };
 
   const handleToggleHeight = () => {
-    setSheetHeight(sheetHeight === "full" ? "half" : "full");
+    setSheetHeight(sheetHeight === "full" ? "collapsed" : "full");
   };
 
-  // 모바일에서는 더 낮게, 데스크톱에서는 기존 유지
   const sheetHeights = {
-    collapsed: "80px", // 120px → 80px (모바일 최적화)
+    collapsed: "80px",
     half: "45dvh",
     full: "calc(100dvh - 120px)",
   };
