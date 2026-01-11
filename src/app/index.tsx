@@ -28,7 +28,7 @@ function App() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-pastel">
+    <div className="relative w-full h-dvh overflow-hidden bg-pastel">
       {/* Pattern Background for Desktop/Tablet */}
       <div className="hidden tablet:block">
         <PatternBackground />
