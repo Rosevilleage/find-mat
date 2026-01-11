@@ -32,33 +32,35 @@ export function useMapData({
       id: place.id,
       name: place.name,
       category: place.category.split(" > ").pop() || "기타",
-      distanceText: place.distance
-        ? `${(place.distance / 1000).toFixed(1)}km`
-        : "거리 정보 없음",
-      priceLevel: "정보 없음",
-      rating: 0, // Places API는 평점 정보를 제공하지 않음
-      isOpen: true, // Places API는 영업 시간 정보를 제공하지 않음
-      image: undefined,
-      menuItems: [],
-      isBookmarked: false,
+      address: place.address,
+      roadAddress: place.roadAddress || place.address,
+      phone: place.phone || "",
+      placeUrl: place.placeUrl || "",
+      distance: place.distance ? place.distance.toString() : "",
+      x: place.lng.toString(),
+      y: place.lat.toString(),
     }));
   }, [searchedFood, searchResults]);
 
-  // 카테고리별로 최고 평점 식당만 필터링
-  const getTopRatedByCategory = (restaurantList: Restaurant[]) => {
+  // 카테고리별로 첫 번째 식당만 필터링
+  const getFirstByCategory = (restaurantList: Restaurant[]) => {
     const categoryMap = new Map<string, Restaurant>();
 
-    // 평점 순으로 정렬
-    const sorted = [...restaurantList].sort((a, b) => b.rating - a.rating);
+    // 거리 순으로 정렬 (가까운 순)
+    const sorted = [...restaurantList].sort((a, b) =>
+      parseInt(a.distance || "0") - parseInt(b.distance || "0")
+    );
 
-    // 각 카테고리별로 최고 평점 식당만 선택
+    // 각 카테고리별로 첫 번째 식당만 선택
     sorted.forEach((restaurant) => {
       if (!categoryMap.has(restaurant.category)) {
         categoryMap.set(restaurant.category, restaurant);
       }
     });
 
-    return Array.from(categoryMap.values()).sort((a, b) => b.rating - a.rating);
+    return Array.from(categoryMap.values()).sort((a, b) =>
+      parseInt(a.distance || "0") - parseInt(b.distance || "0")
+    );
   };
 
   // 검색된 음식을 파는 식당 필터링
@@ -70,8 +72,8 @@ export function useMapData({
       // 카테고리로 필터링
       return restaurants.filter((r) => r.category === selectedCategory);
     } else {
-      // 카테고리별 최고 평점 식당만
-      return getTopRatedByCategory(restaurants);
+      // 카테고리별 첫 번째 식당만
+      return getFirstByCategory(restaurants);
     }
   }, [restaurants, searchedFood, searchedRestaurants, selectedCategory]);
 
@@ -89,20 +91,13 @@ export function useMapData({
       return markers;
     }
 
-    // MOCK 데이터인 경우 서울 근처 고정 위치 할당 (ID 기반 해시)
-    const mockMarkers = filteredRestaurants.slice(0, 8).map((r) => {
-      const hash = r.id
-        .split("")
-        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      // 서울 중심 (37.5665, 126.978) 기준 ±0.05 범위 내 랜덤 위치
-      const latOffset = ((hash * 37) % 100) / 1000; // 0 ~ 0.1
-      const lngOffset = ((hash * 73) % 100) / 1000; // 0 ~ 0.1
-      return {
-        ...r,
-        lat: 37.5165 + latOffset, // 37.5165 ~ 37.6165
-        lng: 126.928 + lngOffset, // 126.928 ~ 127.028
-      };
-    });
+    // MOCK 데이터인 경우 x, y 좌표 사용
+    const mockMarkers = filteredRestaurants.slice(0, 8).map((r) => ({
+      id: r.id,
+      name: r.name,
+      lat: parseFloat(r.y),
+      lng: parseFloat(r.x),
+    }));
     console.log("🗺️ MOCK 마커:", mockMarkers.length, "개");
     return mockMarkers;
   }, [searchedFood, searchResults, filteredRestaurants]);

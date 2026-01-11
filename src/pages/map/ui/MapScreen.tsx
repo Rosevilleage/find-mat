@@ -128,8 +128,7 @@ export function MapScreen({
   }, [searchData]);
 
   // 로컬 상태 관리
-  const [restaurants, setRestaurants] =
-    useState<Restaurant[]>(MOCK_RESTAURANTS);
+  const restaurants = MOCK_RESTAURANTS;
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
@@ -228,22 +227,6 @@ export function MapScreen({
       // 검색 로직 (기존 홈 화면과 동일)
       navigate(`/map?food=${encodeURIComponent(query)}`);
       setIsSearchExpanded(false);
-    }
-  };
-
-  const handleBookmark = (restaurantId: string) => {
-    setRestaurants((prev) =>
-      prev.map((r) =>
-        r.id === restaurantId ? { ...r, isBookmarked: !r.isBookmarked } : r
-      )
-    );
-    const restaurant = restaurants.find((r) => r.id === restaurantId);
-    if (onShowToast) {
-      if (restaurant?.isBookmarked) {
-        onShowToast("즐겨찾기에서 제거되었습니다.", "info");
-      } else {
-        onShowToast("즐겨찾기에 추가되었습니다.");
-      }
     }
   };
 
@@ -364,7 +347,6 @@ export function MapScreen({
           <RestaurantDetail
             restaurant={selectedRestaurant}
             onClose={() => setSelectedRestaurant(null)}
-            onBookmark={() => handleBookmark(selectedRestaurant.id)}
           />
         )}
       </AnimatePresence>

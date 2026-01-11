@@ -102,17 +102,15 @@ export function RestaurantSheet({
                   key={i}
                   className="bg-card rounded-xl p-4 border animate-pulse"
                 >
-                  <div className="flex gap-3">
-                    {/* 이미지 스켈레톤 */}
-                    <div className="w-20 h-20 bg-muted rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                      {/* 제목 스켈레톤 */}
-                      <div className="h-5 bg-muted rounded w-3/4" />
-                      {/* 카테고리 스켈레톤 */}
-                      <div className="h-4 bg-muted rounded w-1/2" />
-                      {/* 거리 스켈레톤 */}
-                      <div className="h-4 bg-muted rounded w-1/4" />
-                    </div>
+                  <div className="space-y-3">
+                    {/* 제목 스켈레톤 */}
+                    <div className="h-5 bg-muted rounded w-2/3" />
+                    {/* 카테고리 스켈레톤 */}
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                    {/* 주소 스켈레톤 */}
+                    <div className="h-4 bg-muted rounded w-full" />
+                    {/* 전화번호 스켈레톤 */}
+                    <div className="h-4 bg-muted rounded w-1/3" />
                   </div>
                 </div>
               ))}
@@ -174,7 +172,6 @@ export function RestaurantSheet({
                   key={restaurant.id}
                   restaurant={restaurant}
                   onClick={() => onRestaurantClick(restaurant)}
-                  onBookmark={() => {}}
                   isSelected={selectedRestaurant?.id === restaurant.id}
                 />
               ))}

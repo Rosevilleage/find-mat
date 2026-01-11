@@ -1,4 +1,4 @@
-import { IconStar, IconMapPin, IconBookmark } from "@tabler/icons-react";
+import { IconMapPin, IconPhone, IconExternalLink } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 import type { Restaurant } from "../model/types";
@@ -6,14 +6,12 @@ import type { Restaurant } from "../model/types";
 interface RestaurantCardProps {
   restaurant: Restaurant;
   onClick: () => void;
-  onBookmark?: () => void;
   isSelected?: boolean;
 }
 
 export function RestaurantCard({
   restaurant,
   onClick,
-  onBookmark,
   isSelected = false,
 }: RestaurantCardProps) {
   return (
@@ -27,74 +25,61 @@ export function RestaurantCard({
           : "border-border"
       )}
     >
-      <div className="flex gap-3 p-3">
-        {/* Thumbnail */}
-        <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-muted">
-          {restaurant.image ? (
-            <img
-              src={restaurant.image}
-              alt={restaurant.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-              }}
-            />
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center">
-              <span className="text-muted-foreground text-xs">이미지 없음</span>
-            </div>
-          )}
-          {!restaurant.isOpen && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white text-xs">영업종료</span>
-            </div>
-          )}
+      <div className="flex flex-col gap-2 p-4">
+        {/* 음식점 이름 */}
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="font-semibold">{restaurant.name}</h4>
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h4 className="truncate">{restaurant.name}</h4>
-            {onBookmark && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBookmark();
-                }}
-                className="p-1 hover:bg-muted rounded-lg transition-colors shrink-0 cursor-pointer"
-              >
-                <IconBookmark
-                  className={cn(
-                    "w-4 h-4",
-                    restaurant.isBookmarked
-                      ? "fill-current text-primary"
-                      : "text-muted-foreground"
-                  )}
-                />
-              </button>
+        {/* 카테고리 */}
+        <div className="text-xs text-muted-foreground">
+          {restaurant.category}
+        </div>
+
+        {/* 주소 */}
+        <div className="flex items-start gap-2 text-sm">
+          <IconMapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-foreground/90 break-words">
+              {restaurant.roadAddress || restaurant.address}
+            </p>
+            {restaurant.distance && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {restaurant.distance}m
+              </p>
             )}
           </div>
-
-          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-            <span>{restaurant.category}</span>
-            <span>•</span>
-            <span className="flex items-center gap-0.5">
-              <IconMapPin className="w-3 h-3" />
-              {restaurant.distanceText}
-            </span>
-            <span>•</span>
-            <span>{restaurant.priceLevel}</span>
-          </div>
-
-          <div className="flex items-center gap-3 mt-2">
-            {/* Average Rating */}
-            <div className="flex items-center gap-1">
-              <IconStar className="w-4 h-4 text-warning fill-warning" />
-              <span className="text-sm">{restaurant.rating.toFixed(1)}</span>
-            </div>
-          </div>
         </div>
+
+        {/* 전화번호 */}
+        {restaurant.phone && (
+          <div className="flex items-center gap-2 text-sm">
+            <IconPhone className="w-4 h-4 text-muted-foreground shrink-0" />
+            <a
+              href={`tel:${restaurant.phone}`}
+              className="text-foreground/90 hover:text-primary transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {restaurant.phone}
+            </a>
+          </div>
+        )}
+
+        {/* 카카오맵 링크 */}
+        {restaurant.placeUrl && (
+          <div className="flex items-center gap-2 text-sm">
+            <IconExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
+            <a
+              href={restaurant.placeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              카카오맵에서 보기
+            </a>
+          </div>
+        )}
       </div>
     </motion.div>
   );
