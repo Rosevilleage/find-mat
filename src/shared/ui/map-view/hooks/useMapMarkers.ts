@@ -87,10 +87,13 @@ export function useMapMarkers(options: UseMapMarkersOptions): void {
         lng: restaurant.lng,
       };
 
+      // 마커 생성 시 바로 커스텀 이미지 적용
       const marker = createMarker(position, {
         map,
         title: restaurant.name,
         clickable: true,
+        imageSrc: MARKER_CONFIG.normal.src,
+        imageSize: MARKER_CONFIG.size,
       });
 
       // 클릭 이벤트 리스너 추가
