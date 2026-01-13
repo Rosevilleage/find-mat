@@ -40,6 +40,12 @@ const GEOLOCATION_OPTIONS: PositionOptions = {
 /** 에러 토스트 표시 시간 (밀리초) */
 const ERROR_TOAST_DURATION = 5000;
 
+/** 기본 중심 좌표 (서울) - 위치 접근 실패 시 폴백 */
+const DEFAULT_CENTER = {
+  lat: 37.5665,
+  lng: 126.978,
+};
+
 /**
  * 현재 위치 가져오기 및 지도 이동을 관리하는 커스텀 훅
  *
@@ -89,6 +95,9 @@ export function useCurrentLocation(
     // Geolocation API 사용 가능 여부 확인
     if (!navigator.geolocation) {
       setError(ERROR_MESSAGES.NOT_SUPPORTED);
+      // Geolocation API를 지원하지 않는 경우에도 기본 center(서울)로 이동
+      console.log("📍 Geolocation API를 지원하지 않습니다. 기본 위치(서울)로 이동합니다.");
+      setCenter(map, DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
       return;
     }
 
@@ -104,9 +113,11 @@ export function useCurrentLocation(
 
         console.log("🔐 현재 위치 버튼 - 권한 상태:", permissionStatus.state);
 
-        // 권한이 거부된 경우 바로 에러 표시
+        // 권한이 거부된 경우 바로 에러 표시 및 기본 center로 이동
         if (permissionStatus.state === "denied") {
           setError(ERROR_MESSAGES.PERMISSION_DENIED);
+          console.log("📍 위치 권한이 거부되었습니다. 기본 위치(서울)로 이동합니다.");
+          setCenter(map, DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
           setIsLoading(false);
           return;
         }
@@ -157,6 +168,11 @@ export function useCurrentLocation(
         }
 
         setError(errorMessage);
+
+        // 위치를 가져올 수 없는 경우 기본 center(서울)로 이동
+        console.log("📍 기본 위치(서울)로 이동합니다.");
+        setCenter(map, DEFAULT_CENTER.lat, DEFAULT_CENTER.lng);
+
         setIsLoading(false);
       },
       // 옵션
