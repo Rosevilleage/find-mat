@@ -2,6 +2,7 @@ import React from "react";
 import {
   useKakaoMap,
   useMapMarkers,
+  useUserLocationMarker,
   type MapRestaurant,
 } from "./hooks";
 
@@ -29,6 +30,8 @@ interface MapViewProps {
   level?: number;
   /** 지도 인스턴스 준비 완료 시 호출되는 콜백 */
   onMapReady?: (map: kakao.maps.Map) => void;
+  /** 사용자 위치 좌표 (표시 시 붉은색 점으로 표시) */
+  userLocation?: MapCenter | null;
 }
 
 /** 기본 중심 좌표 (서울) */
@@ -60,6 +63,7 @@ export function MapView({
   center = DEFAULT_CENTER,
   level = DEFAULT_LEVEL,
   onMapReady,
+  userLocation,
 }: MapViewProps) {
   const { mapContainerRef, mapInstance, isLoading, error } = useKakaoMap({
     center,
@@ -79,6 +83,12 @@ export function MapView({
     restaurants,
     selectedId,
     onMarkerClick: onPinClick,
+  });
+
+  // 사용자 위치 마커 표시
+  useUserLocationMarker({
+    map: mapInstance,
+    userLocation,
   });
 
   // 에러 상태 렌더링

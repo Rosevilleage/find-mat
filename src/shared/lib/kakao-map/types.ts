@@ -33,6 +33,11 @@ declare global {
       // 크기 클래스
       Size: new (width: number, height: number) => kakao.maps.Size;
 
+      // CustomOverlay 클래스
+      CustomOverlay: new (
+        options: kakao.maps.CustomOverlayOptions
+      ) => kakao.maps.CustomOverlay;
+
       // 이벤트 유틸리티
       event: {
         addListener: (
@@ -123,6 +128,27 @@ declare global {
     interface Size {
       // 추후 필요시 메서드 추가 가능
       readonly _brand: "Size";
+    }
+
+    // CustomOverlay 옵션
+    interface CustomOverlayOptions {
+      position: LatLng;
+      content: HTMLElement | string;
+      map?: Map;
+      clickable?: boolean;
+      xAnchor?: number;
+      yAnchor?: number;
+      zIndex?: number;
+    }
+
+    // CustomOverlay 인스턴스
+    interface CustomOverlay {
+      setMap(map: Map | null): void;
+      getMap(): Map;
+      setPosition(position: LatLng): void;
+      getPosition(): LatLng;
+      setContent(content: HTMLElement | string): void;
+      setZIndex(zIndex: number): void;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-namespace

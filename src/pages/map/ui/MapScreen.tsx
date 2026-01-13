@@ -319,6 +319,7 @@ export function MapScreen({
           selectedId={selectedRestaurant?.id ?? undefined}
           center={userLocation ?? undefined}
           onMapReady={setMapInstance}
+          userLocation={userLocation ?? null}
         />
       </div>
 
