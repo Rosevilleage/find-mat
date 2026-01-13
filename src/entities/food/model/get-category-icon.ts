@@ -6,13 +6,8 @@ import {
   JapaneseFoodIcon,
   WesternFoodIcon,
   ChickenIcon,
-  PizzaIcon,
-  BurgerIcon,
   StreetFoodIcon,
   NoodleIcon,
-  CurryIcon,
-  TacoIcon,
-  DessertIcon,
   DefaultIcon,
 } from "../ui/FoodIcons";
 
@@ -32,24 +27,19 @@ export function getCategoryIcon(
       return JapaneseFoodIcon;
     case "양식":
       return WesternFoodIcon;
-    case "치킨":
-      return ChickenIcon;
-    case "피자":
-      return PizzaIcon;
-    case "버거":
-      return BurgerIcon;
+    case "아시안":
+      return NoodleIcon; // 베트남/태국 등 아시안 요리
+    case "패스트푸드":
+      return ChickenIcon; // 치킨, 핫도그 등
     case "분식":
       return StreetFoodIcon;
-    case "베트남/태국":
-      return NoodleIcon;
-    case "인도/네팔":
-      return CurryIcon;
-    case "멕시칸":
-      return TacoIcon;
-    case "카페/디저트":
-      return DessertIcon;
+    case "해산물":
+      return DefaultIcon; // 해산물 전용 아이콘 추가 필요
+    case "고기":
+      return DefaultIcon; // 고기 전용 아이콘 추가 필요
+    case "샐러드":
+      return DefaultIcon; // 샐러드 전용 아이콘 추가 필요
     default:
       return DefaultIcon;
   }
 }
-
