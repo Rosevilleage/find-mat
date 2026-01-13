@@ -3,13 +3,13 @@ import { useNavigate, useSearchParams } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePlacesSearchQuery } from "@/features/search-food-places";
 import { MapView, useCurrentLocation } from "@/shared/ui/map-view";
-import { MOCK_RESTAURANTS } from "@/entities/restaurant";
 import { RestaurantDetail } from "@/widgets/restaurant-detail";
 import type { Restaurant } from "@/entities/restaurant";
 import {
   IconMapPinOff,
   IconSettings,
   IconChevronLeft,
+  IconRefresh,
 } from "@tabler/icons-react";
 import { Button } from "@/shared/ui/kit/button";
 import { CATEGORIES } from "@/shared/config";
@@ -17,6 +17,7 @@ import { useGeolocation } from "@/shared/hooks";
 import { MapHeader } from "./MapHeader";
 import { RestaurantSheet } from "./RestaurantSheet";
 import { useMapData } from "../lib/useMapData";
+import { cn } from "@/shared/lib/utils";
 
 interface MapScreenProps {
   hasLocationPermission?: boolean;
@@ -107,8 +108,25 @@ export function MapScreen({
     checkPermission();
   }, [onShowToast]);
 
-  // URL에서 검색된 음식 읽기
+  // URL에서 검색 파라미터 읽기
   const searchedFood = searchParams.get("food");
+  const searchLat = searchParams.get("lat");
+  const searchLng = searchParams.get("lng");
+  const searchRadius = searchParams.get("radius");
+
+  // 검색 위치: URL 파라미터가 있으면 사용, 없으면 사용자 위치 사용
+  const searchLocation = useMemo(() => {
+    if (searchLat && searchLng) {
+      return {
+        lat: parseFloat(searchLat),
+        lng: parseFloat(searchLng),
+      };
+    }
+    return userLocation ?? undefined;
+  }, [searchLat, searchLng, userLocation]);
+
+  // 검색 반경: URL 파라미터가 있으면 사용, 없으면 5km 기본값
+  const radius = searchRadius ? parseInt(searchRadius) : 5000;
 
   // Places API로 음식점 검색 (URL에 food 파라미터가 있을 때만)
   const {
@@ -117,8 +135,8 @@ export function MapScreen({
     error: searchError,
   } = usePlacesSearchQuery({
     keyword: searchedFood || "",
-    location: userLocation ?? undefined,
-    radius: 5000, // 5km 반경
+    location: searchLocation,
+    radius,
     enabled: !!searchedFood, // food 파라미터가 있을 때만 검색 실행
   });
 
@@ -128,7 +146,7 @@ export function MapScreen({
   }, [searchData]);
 
   // 로컬 상태 관리
-  const restaurants = MOCK_RESTAURANTS;
+  const restaurants: Restaurant[] = [];
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
@@ -160,39 +178,18 @@ export function MapScreen({
   }) => {
     console.log("🖱️ 마커 클릭:", restaurant);
 
-    // Places API 검색 결과인 경우
-    if (searchedFood && searchedRestaurants.length > 0) {
-      const foundRestaurant = searchedRestaurants.find(
-        (r) => r.id === restaurant.id
-      );
-      if (foundRestaurant) {
-        console.log("✅ Places API 음식점 발견:", foundRestaurant);
-        setSelectedRestaurant(foundRestaurant);
+    // 검색 결과에서 해당 음식점 찾기
+    const foundRestaurant = searchedRestaurants.find(
+      (r) => r.id === restaurant.id
+    );
+    if (foundRestaurant) {
+      console.log("✅ 음식점 발견:", foundRestaurant);
+      setSelectedRestaurant(foundRestaurant);
 
-        // 해당 위치로 지도 이동
-        if (mapInstance) {
-          const position = new kakao.maps.LatLng(
-            restaurant.lat,
-            restaurant.lng
-          );
-          mapInstance.panTo(position);
-        }
-      }
-    } else {
-      // MOCK 데이터인 경우
-      const foundRestaurant = restaurants.find((r) => r.id === restaurant.id);
-      if (foundRestaurant) {
-        console.log("✅ MOCK 음식점 발견:", foundRestaurant);
-        setSelectedRestaurant(foundRestaurant);
-
-        // 해당 위치로 지도 이동
-        if (mapInstance) {
-          const position = new kakao.maps.LatLng(
-            restaurant.lat,
-            restaurant.lng
-          );
-          mapInstance.panTo(position);
-        }
+      // 해당 위치로 지도 이동
+      if (mapInstance) {
+        const position = new kakao.maps.LatLng(restaurant.lat, restaurant.lng);
+        mapInstance.panTo(position);
       }
     }
 
@@ -231,7 +228,56 @@ export function MapScreen({
   };
 
   const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category === selectedCategory ? null : category);
+    if (category === selectedCategory) {
+      // 이미 선택된 카테고리를 다시 클릭하면 선택 해제
+      setSelectedCategory(null);
+      handleClearSearch();
+    } else {
+      // 새로운 카테고리 선택 시 검색 실행
+      setSelectedCategory(category);
+      navigate(`/map?food=${encodeURIComponent(category)}`);
+    }
+  };
+
+  const handleRefreshSearch = () => {
+    if (!mapInstance) return;
+
+    // 현재 지도의 중심 좌표 가져오기
+    const center = mapInstance.getCenter();
+    const centerLat = center.getLat();
+    const centerLng = center.getLng();
+
+    // 현재 줌 레벨에 따라 검색 반경 조정
+    const level = mapInstance.getLevel();
+    let radius = 5000; // 기본 5km
+
+    if (level <= 3) {
+      radius = 1000; // 1km
+    } else if (level <= 5) {
+      radius = 2000; // 2km
+    } else if (level <= 7) {
+      radius = 3000; // 3km
+    } else if (level <= 9) {
+      radius = 5000; // 5km
+    } else {
+      radius = 10000; // 10km
+    }
+
+    console.log("🔄 새로고침 검색:", { centerLat, centerLng, level, radius });
+
+    // 현재 검색어 또는 카테고리가 있으면 해당 키워드로 검색, 없으면 "음식점"으로 검색
+    const keyword = searchedFood || selectedCategory || "음식점";
+
+    // 위치 정보와 반경을 URL 파라미터에 추가하여 검색
+    navigate(
+      `/map?food=${encodeURIComponent(
+        keyword
+      )}&lat=${centerLat}&lng=${centerLng}&radius=${radius}`
+    );
+
+    if (onShowToast) {
+      onShowToast(`반경 ${radius / 1000}km 내 ${keyword} 검색 중...`, "info");
+    }
   };
 
   const handleDragEnd = (info: { offset: { y: number } }) => {
@@ -293,6 +339,23 @@ export function MapScreen({
             <IconChevronLeft className="w-5 h-5 text-foreground" />
           </motion.button>
         )}
+      </AnimatePresence>
+
+      {/* Refresh Button - 검색창 확장 시 숨김 */}
+      <AnimatePresence>
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onClick={handleRefreshSearch}
+          className={cn(
+            "absolute left-2 z-30 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors cursor-pointer",
+            searchedFood ? "top-26 tablet:top-32" : "top-20 tablet:top-32"
+          )}
+        >
+          <IconRefresh className="w-5 h-5 text-foreground" />
+        </motion.button>
       </AnimatePresence>
 
       {/* Header */}

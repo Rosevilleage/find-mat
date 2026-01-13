@@ -66,8 +66,14 @@ export function MapHeader({
                   className="flex items-center gap-2 bg-background border border-primary/20 rounded-xl px-4 py-2"
                 >
                   <span className="text-sm flex-1">
-                    <span className="text-primary">'{searchedFood}'</span>
-                    을(를) 파는 식당
+                    {searchedFood !== "음식점" ? (
+                      <>
+                        <span className="text-primary">'{searchedFood}'</span>
+                        을(를) 파는 식당{" "}
+                      </>
+                    ) : (
+                      <p className="text-primary text-center">주변 식당</p>
+                    )}
                   </span>
                   <button
                     onClick={onClearSearch}

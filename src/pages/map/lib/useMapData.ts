@@ -79,7 +79,7 @@ export function useMapData({
 
   // 지도 마커 데이터 생성
   const mapMarkers = useMemo((): MapMarker[] => {
-    // Places API 검색 결과인 경우 실제 좌표 사용
+    // Places API 검색 결과를 마커로 변환
     if (searchedFood && searchResults.length > 0) {
       const markers = searchResults.map((place) => ({
         id: place.id,
@@ -87,19 +87,19 @@ export function useMapData({
         lat: place.lat,
         lng: place.lng,
       }));
-      console.log("🗺️ Places API 마커:", markers.length, "개", markers);
+      console.log("🗺️ 마커:", markers.length, "개", markers);
       return markers;
     }
 
-    // MOCK 데이터인 경우 x, y 좌표 사용
-    const mockMarkers = filteredRestaurants.slice(0, 8).map((r) => ({
+    // 필터링된 레스토랑을 마커로 변환
+    const markers = filteredRestaurants.slice(0, 8).map((r) => ({
       id: r.id,
       name: r.name,
       lat: parseFloat(r.y),
       lng: parseFloat(r.x),
     }));
-    console.log("🗺️ MOCK 마커:", mockMarkers.length, "개");
-    return mockMarkers;
+    console.log("🗺️ 마커:", markers.length, "개");
+    return markers;
   }, [searchedFood, searchResults, filteredRestaurants]);
 
   return {
