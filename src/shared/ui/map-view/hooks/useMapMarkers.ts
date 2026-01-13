@@ -3,6 +3,7 @@ import {
   createMarker,
   addMarkerClickEvent,
   updateMarkerStyle,
+  createCustomOverlay,
   type MarkerPosition,
 } from "@/shared/lib/kakao-map";
 import { MARKER_CONFIG } from "@/shared/config";
@@ -32,10 +33,12 @@ export interface UseMapMarkersOptions {
 }
 
 /**
- * 마커 데이터 (마커 인스턴스와 레스토랑 정보를 함께 저장)
+ * 마커 데이터 (마커 인스턴스, 오버레이, 레스토랑 정보를 함께 저장)
  */
 interface MarkerData {
   marker: kakao.maps.Marker;
+  overlay: kakao.maps.CustomOverlay;
+  overlayContent: HTMLElement;
   restaurant: MapRestaurant;
 }
 
@@ -69,9 +72,10 @@ export function useMapMarkers(options: UseMapMarkersOptions): void {
       return;
     }
 
-    // 기존 마커 제거
-    markersRef.current.forEach(({ marker }) => {
+    // 기존 마커 및 오버레이 제거
+    markersRef.current.forEach(({ marker, overlay }) => {
       marker.setMap(null);
+      overlay.setMap(null);
     });
     markersRef.current = [];
 
@@ -80,7 +84,7 @@ export function useMapMarkers(options: UseMapMarkersOptions): void {
       return;
     }
 
-    // 새 마커 생성
+    // 새 마커 및 오버레이 생성
     const newMarkers: MarkerData[] = restaurants.map((restaurant) => {
       const position: MarkerPosition = {
         lat: restaurant.lat,
@@ -103,25 +107,53 @@ export function useMapMarkers(options: UseMapMarkersOptions): void {
         });
       }
 
+      // 오버레이 컨텐츠 생성 (식당 이름)
+      const overlayContent = document.createElement("div");
+      overlayContent.style.cssText = `
+        position: relative;
+        padding: 6px 12px;
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        color: white;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+      `;
+      overlayContent.textContent = restaurant.name;
+
+      // 커스텀 오버레이 생성 (마커 상단에 표시)
+      const overlay = createCustomOverlay(position, {
+        map,
+        content: overlayContent,
+        zIndex: 20,
+        clickable: false,
+        yAnchor: 2.7, // 마커 상단에 표시
+      });
+
       return {
         marker,
+        overlay,
+        overlayContent,
         restaurant,
       };
     });
 
     markersRef.current = newMarkers;
 
-    // Cleanup: 컴포넌트 언마운트 시 마커 제거
+    // Cleanup: 컴포넌트 언마운트 시 마커 및 오버레이 제거
     return () => {
-      markersRef.current.forEach(({ marker }) => {
+      markersRef.current.forEach(({ marker, overlay }) => {
         marker.setMap(null);
+        overlay.setMap(null);
       });
       markersRef.current = [];
     };
   }, [map, restaurants, onMarkerClick]);
 
   /**
-   * 선택된 마커 스타일 업데이트
+   * 선택된 마커 및 오버레이 스타일 업데이트
    */
   useEffect(() => {
     // 지도가 없으면 스타일 업데이트하지 않음
@@ -129,15 +161,37 @@ export function useMapMarkers(options: UseMapMarkersOptions): void {
       return;
     }
 
-    // 모든 마커의 스타일 업데이트 (커스텀 이미지 사용)
-    markersRef.current.forEach(({ marker, restaurant }) => {
+    // 모든 마커 및 오버레이의 스타일 업데이트
+    markersRef.current.forEach(({ marker, overlayContent, restaurant }) => {
       const isSelected = restaurant.id === selectedId;
 
+      // 마커 스타일 업데이트 (커스텀 이미지 사용)
       updateMarkerStyle(marker, isSelected, {
         selectedImageSrc: MARKER_CONFIG.selected.src,
         normalImageSrc: MARKER_CONFIG.normal.src,
         imageSize: MARKER_CONFIG.size,
       });
+
+      // 오버레이 스타일 업데이트 (선택된 마커는 노란색 강조)
+      if (isSelected) {
+        overlayContent.style.border = "2px solid #FBBF24";
+        overlayContent.style.boxShadow =
+          "0 4px 12px rgba(251, 191, 36, 0.5), 0 2px 4px rgba(0, 0, 0, 0.2)";
+        overlayContent.style.transform = "scale(1.05)";
+      } else {
+        overlayContent.style.border = "2px solid rgba(255, 255, 255, 0.2)";
+        overlayContent.style.boxShadow =
+          "0 3px 8px rgba(79, 70, 229, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2)";
+        overlayContent.style.transform = "scale(1)";
+      }
+
+      // 삼각형 꼬리 색상도 업데이트
+      const arrow = overlayContent.lastElementChild as HTMLElement;
+      if (arrow && isSelected) {
+        arrow.style.borderTopColor = "#FBBF24";
+      } else if (arrow) {
+        arrow.style.borderTopColor = "#4F46E5";
+      }
     });
   }, [map, selectedId]);
 }

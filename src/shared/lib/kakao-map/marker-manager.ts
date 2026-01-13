@@ -212,3 +212,82 @@ export function addMarkerClickEvent(
   // 클릭 이벤트 리스너 추가
   kakao.maps.event.addListener(marker, "click", callback);
 }
+
+/**
+ * 커스텀 오버레이 생성 옵션
+ */
+export interface CreateCustomOverlayOptions {
+  /** 오버레이를 표시할 지도 인스턴스 */
+  map?: kakao.maps.Map;
+  /** 오버레이 내용 (HTML 엘리먼트 또는 텍스트) */
+  content: string | HTMLElement;
+  /** 오버레이 z-index */
+  zIndex?: number;
+  /** 오버레이가 클릭 가능한지 여부 */
+  clickable?: boolean;
+  /** y축 오프셋 (마커 위에 띄우기 위한 값) */
+  yAnchor?: number;
+}
+
+/**
+ * Kakao Map 커스텀 오버레이를 생성합니다.
+ *
+ * @param position - 오버레이 위치 좌표
+ * @param options - 오버레이 생성 옵션
+ * @returns 생성된 Kakao Map 커스텀 오버레이 인스턴스
+ * @throws {Error} 위치가 없거나 좌표가 올바르지 않은 경우
+ *
+ * @example
+ * ```typescript
+ * // 텍스트 오버레이 생성
+ * const overlay = createCustomOverlay(
+ *   { lat: 37.5665, lng: 126.978 },
+ *   {
+ *     map,
+ *     content: '서울시청',
+ *     zIndex: 20,
+ *     yAnchor: 1.3
+ *   }
+ * );
+ * ```
+ */
+export function createCustomOverlay(
+  position: MarkerPosition,
+  options: CreateCustomOverlayOptions
+): kakao.maps.CustomOverlay {
+  // 위치 검증
+  if (!position) {
+    throw new Error("Position is required");
+  }
+
+  if (Number.isNaN(position.lat) || Number.isNaN(position.lng)) {
+    throw new Error("Invalid position coordinates");
+  }
+
+  // 위치 객체 생성
+  const overlayPosition = new kakao.maps.LatLng(position.lat, position.lng);
+
+  // 컨텐츠 처리
+  let content: HTMLElement;
+  if (typeof options.content === "string") {
+    content = document.createElement("div");
+    content.textContent = options.content;
+  } else {
+    content = options.content;
+  }
+
+  // 오버레이 옵션 구성
+  const overlayOptions: kakao.maps.CustomOverlayOptions = {
+    position: overlayPosition,
+    content,
+    map: options.map,
+    zIndex: options.zIndex,
+    clickable: options.clickable ?? false,
+    yAnchor: options.yAnchor,
+  };
+
+  // 오버레이 생성 및 반환
+  const overlay = new kakao.maps.CustomOverlay(overlayOptions);
+
+  return overlay;
+}

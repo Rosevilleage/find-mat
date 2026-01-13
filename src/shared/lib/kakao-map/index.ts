@@ -23,9 +23,11 @@ export {
   createMarker,
   updateMarkerStyle,
   addMarkerClickEvent,
+  createCustomOverlay,
   type MarkerPosition,
   type CreateMarkerOptions,
   type UpdateMarkerStyleOptions,
+  type CreateCustomOverlayOptions,
 } from "./marker-manager";
 
 // Places 서비스
