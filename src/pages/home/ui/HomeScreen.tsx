@@ -1,16 +1,48 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { AnimatePresence } from "framer-motion";
 import { SlotMachine, SlotMachineIcon } from "@/widgets/slot-machine";
 import { FoodResultModal } from "@/widgets/food-result-modal";
-import { IconMapPin } from "@tabler/icons-react";
+import { FoodListModal, useFoodList } from "@/features/manage-food-list";
+import {
+  IconMapPin,
+  IconSettings,
+  IconList,
+  IconMenu2,
+} from "@tabler/icons-react";
 import { FOOD_ITEMS } from "@/shared/config";
+import { useLocalStorage } from "@/shared/hooks";
 
-export function HomeScreen() {
+interface HomeScreenProps {
+  onShowToast?: (message: string, type: "success" | "error" | "info") => void;
+}
+
+export function HomeScreen({ onShowToast }: HomeScreenProps) {
   const navigate = useNavigate();
   const [isRolling, setIsRolling] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [useCustomList, setUseCustomList] = useLocalStorage(
+    "use-custom-list",
+    false
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { foods: customFoods } = useFoodList();
+
+  // Compute active food items
+  const activeFoodItems = useMemo(() => {
+    if (useCustomList && customFoods.length > 0) {
+      return customFoods;
+    }
+    return FOOD_ITEMS;
+  }, [useCustomList, customFoods]);
+
+  // Show toast when toggle is ON but list is empty
+  useEffect(() => {
+    if (useCustomList && customFoods.length === 0 && onShowToast) {
+      onShowToast("목록이 비어있어 기본 메뉴로 검색합니다", "info");
+    }
+  }, [useCustomList, customFoods.length, onShowToast]);
 
   const handlePickFood = () => {
     if (isRolling) return;
@@ -18,9 +50,9 @@ export function HomeScreen() {
     setIsRolling(true);
     setShowResult(false);
 
-    // 랜덤 음식 선택
-    const randomIndex = Math.floor(Math.random() * FOOD_ITEMS.length);
-    const selectedFood = FOOD_ITEMS[randomIndex];
+    // 랜덤 음식 선택 (activeFoodItems 사용)
+    const randomIndex = Math.floor(Math.random() * activeFoodItems.length);
+    const selectedFood = activeFoodItems[randomIndex];
     setResult(selectedFood);
   };
 
@@ -115,19 +147,73 @@ export function HomeScreen() {
         )}
       </div>
 
-      {/* Roll Dice Button */}
+      {/* Action Buttons */}
       <div className="mt-auto space-y-3">
+        {/* Compact Segment Control - Vercel Best Practice: rendering-conditional-render */}
+        <div className="flex items-center gap-2">
+          {/* iOS-style Segment Control */}
+          <div className="flex-1 bg-gray-100 rounded-lg p-1 flex gap-1">
+            <button
+              onClick={() => setUseCustomList(false)}
+              className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-all ${
+                !useCustomList
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "bg-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                <IconMenu2 size={14} />
+                <span>기본 목록</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setUseCustomList(true)}
+              className={`flex-1 px-3 py-2 rounded-md text-xs font-semibold transition-all ${
+                useCustomList
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "bg-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-1.5">
+                <IconList size={14} />
+                <span>
+                  내 목록 {customFoods.length > 0 && `(${customFoods.length})`}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Settings Button */}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            aria-label="내 목록 관리"
+          >
+            <IconSettings size={18} className="text-gray-700" />
+          </button>
+        </div>
+
         <button
           onClick={handlePickFood}
           disabled={isRolling}
-          className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-indigo-400 disabled:cursor-not-allowed cursor-pointer text-white rounded-2xl transition-all duration-150 flex items-center justify-center gap-3 active:scale-[0.98] shadow-lg"
+          className="relative w-full py-5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-indigo-400 disabled:cursor-not-allowed cursor-pointer text-white rounded-2xl transition-all duration-150 flex items-center justify-center gap-3 active:scale-[0.98] shadow-lg"
         >
           <div className="w-6 h-6 flex items-center justify-center bg-white rounded-lg">
             <SlotMachineIcon className="w-5 h-5" />
           </div>
-          <span className="text-lg">
-            {isRolling ? "음식 뽑는 중..." : "음식 뽑기"}
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-semibold">
+              {isRolling ? "음식 뽑는 중..." : "음식 뽑기"}
+            </span>
+            {/* Current list indicator - Vercel Best Practice: rendering-conditional-render */}
+            {!isRolling && (
+              <span className="text-xs opacity-80 mt-0.5">
+                {useCustomList
+                  ? `내 목록 ${customFoods.length}개에서`
+                  : "기본 97가지 메뉴에서"}
+              </span>
+            )}
+          </div>
         </button>
 
         <button
@@ -143,9 +229,10 @@ export function HomeScreen() {
       {isRolling && result && (
         <SlotMachine
           isRolling={isRolling}
-          foodItems={FOOD_ITEMS}
+          foodItems={activeFoodItems}
           result={result}
           onComplete={handleSlotComplete}
+          isCustomList={useCustomList}
         />
       )}
 
@@ -157,6 +244,17 @@ export function HomeScreen() {
             onFindNearby={handleFindNearby}
             onPickAgain={handlePickAgain}
             onClose={handleClose}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Food List Management Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <FoodListModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onShowToast={onShowToast}
           />
         )}
       </AnimatePresence>

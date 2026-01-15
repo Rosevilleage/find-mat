@@ -39,7 +39,10 @@ function App() {
         {/* Main Content */}
         <div className="h-full">
           <Routes>
-            <Route path="/" element={<HomeScreen />} />
+            <Route
+              path="/"
+              element={<HomeScreen onShowToast={showToast} />}
+            />
             <Route
               path="/map"
               element={<MapScreen onShowToast={showToast} />}

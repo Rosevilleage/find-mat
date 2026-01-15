@@ -1,7 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotMachineIcon } from "./SlotMachineIcon";
-import { getFoodCategory, getCategoryIcon } from "@/entities/food";
+import {
+  getFoodCategory,
+  getCategoryIcon,
+  KoreanFoodIcon,
+  ChineseFoodIcon,
+  JapaneseFoodIcon,
+  WesternFoodIcon,
+  ChickenIcon,
+  PizzaIcon,
+  BurgerIcon,
+  StreetFoodIcon,
+  NoodleIcon,
+  CurryIcon,
+  TacoIcon,
+  DessertIcon,
+  DefaultIcon,
+} from "@/entities/food";
+
+// Vercel Best Practice: rendering-hoist-jsx - 아이콘 배열을 모듈 레벨에서 정의
+const ALL_FOOD_ICONS = [
+  KoreanFoodIcon,
+  ChineseFoodIcon,
+  JapaneseFoodIcon,
+  WesternFoodIcon,
+  ChickenIcon,
+  PizzaIcon,
+  BurgerIcon,
+  StreetFoodIcon,
+  NoodleIcon,
+  CurryIcon,
+  TacoIcon,
+  DessertIcon,
+];
+
+// 랜덤 아이콘 선택 함수
+const getRandomIcon = () => {
+  const randomIndex = Math.floor(Math.random() * ALL_FOOD_ICONS.length);
+  return ALL_FOOD_ICONS[randomIndex];
+};
 
 // 스파클 위치를 미리 정의 (렌더링 시 Math.random() 사용 방지)
 const SPARKLE_POSITIONS = [
@@ -17,25 +55,30 @@ interface SlotMachineProps {
   foodItems: string[];
   result: string;
   onComplete: () => void;
+  isCustomList?: boolean; // 커스텀 목록 사용 여부
 }
 
 interface SlotColumn {
   categories: string[];
   icons: React.ComponentType<{ className?: string }>[];
   foodNames: string[];
+  isCustomList: boolean; // 커스텀 목록 여부를 저장
 }
 
-export function SlotMachine({
+// Vercel Best Practice: rerender-memo - Extract expensive work into memoized components
+const SlotMachineComponent = ({
   isRolling,
   foodItems,
   result,
   onComplete,
-}: SlotMachineProps) {
+  isCustomList = false,
+}: SlotMachineProps) => {
   const [showSlot, setShowSlot] = useState(false);
   const [slotColumns, setSlotColumns] = useState<SlotColumn>({
     categories: [],
     icons: [],
     foodNames: [],
+    isCustomList: false,
   });
 
   useEffect(() => {
@@ -58,14 +101,33 @@ export function SlotMachine({
       const resultIndex = 15;
       randomFoods[resultIndex] = result;
 
-      // 각 음식에 대한 카테고리와 아이콘 생성
-      const categories = randomFoods.map((food) => getFoodCategory(food));
-      const icons = categories.map((category) => getCategoryIcon(category));
+      // Vercel Best Practice: rendering-conditional-render
+      // 커스텀 목록과 기본 목록에 따라 다른 레이아웃 사용
+      let categories: string[];
+      let icons: React.ComponentType<{ className?: string }>[];
+      let foodNames: string[];
+
+      if (isCustomList) {
+        // 내 목록: 1열 메뉴이름 | 2열 아이콘 | 3열 메뉴이름
+        // Vercel Best Practice: js-cache-function-results - 랜덤 아이콘 생성
+        categories = randomFoods; // 1열: 메뉴 이름
+        icons = randomFoods.map((_, index) => {
+          // 결과 위치(index 15)만 기타 아이콘, 나머지는 랜덤 아이콘
+          return index === resultIndex ? DefaultIcon : getRandomIcon();
+        });
+        foodNames = randomFoods; // 3열: 메뉴 이름
+      } else {
+        // 기본 목록: 1열 카테고리 | 2열 아이콘 | 3열 메뉴 이름
+        categories = randomFoods.map((food) => getFoodCategory(food));
+        icons = categories.map((category) => getCategoryIcon(category));
+        foodNames = randomFoods;
+      }
 
       setSlotColumns({
         categories,
         icons,
-        foodNames: randomFoods,
+        foodNames,
+        isCustomList,
       });
 
       // 슬롯 애니메이션 완료 시간 (3초 - 가장 긴 컬럼 기준)
@@ -127,9 +189,9 @@ export function SlotMachine({
               {/* 하단 그라디언트 오버레이 */}
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-indigo-500 to-transparent z-10 pointer-events-none" />
 
-              {/* 3개의 슬롯 컬럼 */}
+              {/* 3개의 슬롯 컬럼 - Vercel Best Practice: rendering-conditional-render */}
               <div className="relative h-64 overflow-hidden flex">
-                {/* 컬럼 1: 카테고리 */}
+                {/* 컬럼 1: 커스텀이면 메뉴이름, 기본이면 카테고리 */}
                 <div className="flex-1 relative overflow-hidden border-r-2 border-white/20">
                   <motion.div
                     className="absolute left-0 right-0 flex flex-col items-center"
@@ -143,21 +205,33 @@ export function SlotMachine({
                       ease: [0.34, 1.56, 0.64, 1],
                     }}
                   >
-                    {slotColumns.categories.map((category, index) => (
-                      <div
-                        key={index}
-                        className="h-20 flex items-center justify-center text-white text-base font-medium py-2 px-2 text-center"
-                        style={{
-                          textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                        }}
-                      >
-                        {category}
-                      </div>
-                    ))}
+                    {slotColumns.isCustomList
+                      ? slotColumns.categories.map((menuName, index) => (
+                          <div
+                            key={index}
+                            className="h-20 flex items-center justify-center text-white text-base font-medium py-2 px-2 text-center"
+                            style={{
+                              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                            }}
+                          >
+                            {menuName}
+                          </div>
+                        ))
+                      : slotColumns.categories.map((category, index) => (
+                          <div
+                            key={index}
+                            className="h-20 flex items-center justify-center text-white text-base font-medium py-2 px-2 text-center"
+                            style={{
+                              textShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                            }}
+                          >
+                            {category}
+                          </div>
+                        ))}
                   </motion.div>
                 </div>
 
-                {/* 컬럼 2: 아이콘 */}
+                {/* 컬럼 2: 항상 아이콘 */}
                 <div className="flex-1 relative overflow-hidden border-r-2 border-white/20">
                   <motion.div
                     className="absolute left-0 right-0 flex flex-col items-center"
@@ -182,7 +256,7 @@ export function SlotMachine({
                   </motion.div>
                 </div>
 
-                {/* 컬럼 3: 음식 이름 */}
+                {/* 컬럼 3: 커스텀이면 메뉴이름, 기본이면 메뉴이름 */}
                 <div className="flex-1 relative overflow-hidden">
                   <motion.div
                     className="absolute left-0 right-0 flex flex-col items-center"
@@ -265,4 +339,7 @@ export function SlotMachine({
       )}
     </AnimatePresence>
   );
-}
+};
+
+// Vercel Best Practice: rerender-memo - Memoize to prevent unnecessary re-renders
+export const SlotMachine = memo(SlotMachineComponent);
