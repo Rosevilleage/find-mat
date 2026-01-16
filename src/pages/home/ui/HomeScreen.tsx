@@ -1,9 +1,25 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router";
 import { AnimatePresence } from "framer-motion";
-import { SlotMachine, SlotMachineIcon } from "@/widgets/slot-machine";
-import { FoodResultModal } from "@/widgets/food-result-modal";
-import { FoodListModal, useFoodList } from "@/features/manage-food-list";
+import { SlotMachineIcon } from "@/widgets/slot-machine/ui/SlotMachineIcon";
+import { useFoodList } from "@/features/manage-food-list";
+
+// Vercel Best Practice: bundle-dynamic-imports - 무거운 모달/위젯을 lazy loading
+const SlotMachine = lazy(() =>
+  import("@/widgets/slot-machine/ui/SlotMachine").then((m) => ({
+    default: m.SlotMachine,
+  }))
+);
+const FoodResultModal = lazy(() =>
+  import("@/widgets/food-result-modal").then((m) => ({
+    default: m.FoodResultModal,
+  }))
+);
+const FoodListModal = lazy(() =>
+  import("@/features/manage-food-list").then((m) => ({
+    default: m.FoodListModal,
+  }))
+);
 import {
   IconMapPin,
   IconSettings,
@@ -227,35 +243,41 @@ export function HomeScreen({ onShowToast }: HomeScreenProps) {
 
       {/* Slot Machine Animation */}
       {isRolling && result && (
-        <SlotMachine
-          isRolling={isRolling}
-          foodItems={activeFoodItems}
-          result={result}
-          onComplete={handleSlotComplete}
-          isCustomList={useCustomList}
-        />
+        <Suspense fallback={null}>
+          <SlotMachine
+            isRolling={isRolling}
+            foodItems={activeFoodItems}
+            result={result}
+            onComplete={handleSlotComplete}
+            isCustomList={useCustomList}
+          />
+        </Suspense>
       )}
 
       {/* Result Modal */}
       <AnimatePresence>
         {showResult && result && (
-          <FoodResultModal
-            foodName={result}
-            onFindNearby={handleFindNearby}
-            onPickAgain={handlePickAgain}
-            onClose={handleClose}
-          />
+          <Suspense fallback={null}>
+            <FoodResultModal
+              foodName={result}
+              onFindNearby={handleFindNearby}
+              onPickAgain={handlePickAgain}
+              onClose={handleClose}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 
       {/* Food List Management Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <FoodListModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onShowToast={onShowToast}
-          />
+          <Suspense fallback={null}>
+            <FoodListModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onShowToast={onShowToast}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>

@@ -147,7 +147,7 @@ const SlotMachineComponent = ({
       if (completionTimer) clearTimeout(completionTimer);
       if (hideTimer) clearTimeout(hideTimer);
     };
-  }, [isRolling, foodItems, result, onComplete]);
+  }, [isRolling, foodItems, result, onComplete, isCustomList]);
 
   // 결과 아이템이 화면 중앙에 오도록 계산
   const resultIndex = 15;

@@ -5,7 +5,7 @@ import {
   InputGroupInput,
   InputGroupAddon,
   InputGroupButton,
-} from "@/shared/ui/kit";
+} from "@/shared/ui/kit/input-group";
 
 interface FoodListInputProps {
   onAdd: (food: string) => void;

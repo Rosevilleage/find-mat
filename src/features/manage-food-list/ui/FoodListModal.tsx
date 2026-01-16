@@ -13,7 +13,7 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
-} from "@/shared/ui/kit";
+} from "@/shared/ui/kit/alert-dialog";
 
 interface FoodListModalProps {
   isOpen: boolean;

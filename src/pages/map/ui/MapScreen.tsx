@@ -1,10 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePlacesSearchQuery } from "@/features/search-food-places";
 import { MapView, useCurrentLocation } from "@/shared/ui/map-view";
-import { RestaurantDetail } from "@/widgets/restaurant-detail";
 import type { Restaurant } from "@/entities/restaurant";
+
+// Vercel Best Practice: bundle-dynamic-imports - 무거운 모달을 lazy loading
+const RestaurantDetail = lazy(() =>
+  import("@/widgets/restaurant-detail").then((m) => ({
+    default: m.RestaurantDetail,
+  }))
+);
 import {
   IconMapPinOff,
   IconSettings,
@@ -407,10 +413,12 @@ export function MapScreen({
       {/* Restaurant Detail Modal */}
       <AnimatePresence>
         {selectedRestaurant && (
-          <RestaurantDetail
-            restaurant={selectedRestaurant}
-            onClose={() => setSelectedRestaurant(null)}
-          />
+          <Suspense fallback={null}>
+            <RestaurantDetail
+              restaurant={selectedRestaurant}
+              onClose={() => setSelectedRestaurant(null)}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
     </div>
