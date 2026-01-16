@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { AnimatePresence } from "framer-motion";
 import { SlotMachineIcon } from "@/widgets/slot-machine/ui/SlotMachineIcon";
 import { useFoodList } from "@/features/manage-food-list";
+import { useToast } from "@/shared/contexts";
 
 // Vercel Best Practice: bundle-dynamic-imports - 무거운 모달/위젯을 lazy loading
 const SlotMachine = lazy(() =>
@@ -29,12 +30,9 @@ import {
 import { FOOD_ITEMS } from "@/shared/config";
 import { useLocalStorage } from "@/shared/hooks";
 
-interface HomeScreenProps {
-  onShowToast?: (message: string, type: "success" | "error" | "info") => void;
-}
-
-export function HomeScreen({ onShowToast }: HomeScreenProps) {
+export function HomeScreen() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [isRolling, setIsRolling] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -55,10 +53,10 @@ export function HomeScreen({ onShowToast }: HomeScreenProps) {
 
   // Show toast when toggle is ON but list is empty
   useEffect(() => {
-    if (useCustomList && customFoods.length === 0 && onShowToast) {
-      onShowToast("목록이 비어있어 기본 메뉴로 검색합니다", "info");
+    if (useCustomList && customFoods.length === 0) {
+      showToast("목록이 비어있어 기본 메뉴로 검색합니다", "info");
     }
-  }, [useCustomList, customFoods.length, onShowToast]);
+  }, [useCustomList, customFoods.length, showToast]);
 
   const handlePickFood = () => {
     if (isRolling) return;
@@ -275,7 +273,6 @@ export function HomeScreen({ onShowToast }: HomeScreenProps) {
             <FoodListModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              onShowToast={onShowToast}
             />
           </Suspense>
         )}

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePlacesSearchQuery } from "@/features/search-food-places";
 import { MapView, useCurrentLocation } from "@/shared/ui/map-view";
 import type { Restaurant } from "@/entities/restaurant";
+import { useToast } from "@/shared/contexts";
 
 // Vercel Best Practice: bundle-dynamic-imports - 무거운 모달을 lazy loading
 const RestaurantDetail = lazy(() =>
@@ -28,15 +29,14 @@ import { cn } from "@/shared/lib/utils";
 interface MapScreenProps {
   hasLocationPermission?: boolean;
   onRequestPermission?: () => void;
-  onShowToast?: (message: string, type?: "success" | "error" | "info") => void;
 }
 
 export function MapScreen({
   hasLocationPermission = true,
   onRequestPermission,
-  onShowToast,
 }: MapScreenProps) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
 
   // 사용자 위치 가져오기 (실패 시 서울 기본 좌표 사용)
@@ -51,25 +51,25 @@ export function MapScreen({
       console.warn("📍 위치 정보:", geoError);
 
       // 사용자에게 위치 권한 에러 표시
-      if (onShowToast) {
+      if (showToast) {
         if (geoError.includes("거부")) {
-          onShowToast(
+          showToast(
             "위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.",
             "error"
           );
         } else if (geoError.includes("사용할 수 없습니다")) {
           // POSITION_UNAVAILABLE 에러 - 시스템 위치 서비스 비활성화
-          onShowToast(
+          showToast(
             "시스템 위치 서비스가 비활성화되어 있습니다. 시스템 설정에서 위치 서비스를 활성화해주세요.",
             "error"
           );
         } else {
-          onShowToast(geoError, "error");
+          showToast(geoError, "error");
         }
         hasShownToast.current = true;
       }
     }
-  }, [geoError, onShowToast]);
+  }, [geoError, showToast]);
 
   // 위치 권한 상태 확인 (Permissions API 사용)
   React.useEffect(() => {
@@ -95,11 +95,11 @@ export function MapScreen({
 
           if (
             result.state === "granted" &&
-            onShowToast &&
+            showToast &&
             !hasShownPermissionToast
           ) {
             hasShownPermissionToast = true;
-            onShowToast("위치 권한이 허용되었습니다.", "success");
+            showToast("위치 권한이 허용되었습니다.", "success");
             // 페이지 새로고침으로 위치 다시 가져오기
             setTimeout(() => {
               window.location.reload();
@@ -112,7 +112,7 @@ export function MapScreen({
     };
 
     checkPermission();
-  }, [onShowToast]);
+  }, [showToast]);
 
   // URL에서 검색 파라미터 읽기
   const searchedFood = searchParams.get("food");
@@ -121,6 +121,9 @@ export function MapScreen({
   const searchRadius = searchParams.get("radius");
 
   // 검색 위치: URL 파라미터가 있으면 사용, 없으면 사용자 위치 사용
+  // Vercel Best Practice: rerender-dependencies - 원시 값으로 의존성 변경
+  const userLat = userLocation?.lat;
+  const userLng = userLocation?.lng;
   const searchLocation = useMemo(() => {
     if (searchLat && searchLng) {
       return {
@@ -128,8 +131,11 @@ export function MapScreen({
         lng: parseFloat(searchLng),
       };
     }
-    return userLocation ?? undefined;
-  }, [searchLat, searchLng, userLocation]);
+    if (userLat !== undefined && userLng !== undefined) {
+      return { lat: userLat, lng: userLng };
+    }
+    return undefined;
+  }, [searchLat, searchLng, userLat, userLng]);
 
   // 검색 반경: URL 파라미터가 있으면 사용, 없으면 5km 기본값
   const radius = searchRadius ? parseInt(searchRadius) : 5000;
@@ -281,8 +287,8 @@ export function MapScreen({
       )}&lat=${centerLat}&lng=${centerLng}&radius=${radius}`
     );
 
-    if (onShowToast) {
-      onShowToast(`반경 ${radius / 1000}km 내 ${keyword} 검색 중...`, "info");
+    if (showToast) {
+      showToast(`반경 ${radius / 1000}km 내 ${keyword} 검색 중...`, "info");
     }
   };
 

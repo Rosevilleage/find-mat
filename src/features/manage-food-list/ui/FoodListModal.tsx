@@ -4,6 +4,7 @@ import { IconX, IconTrash } from "@tabler/icons-react";
 import { useFoodList } from "../model/useFoodList";
 import { FoodListInput } from "./FoodListInput";
 import { FoodChips } from "./FoodChips";
+import { useToast } from "@/shared/contexts";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,14 +19,10 @@ import {
 interface FoodListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onShowToast?: (message: string, type: "success" | "error" | "info") => void;
 }
 
-export function FoodListModal({
-  isOpen,
-  onClose,
-  onShowToast,
-}: FoodListModalProps) {
+export function FoodListModal({ isOpen, onClose }: FoodListModalProps) {
+  const { showToast } = useToast();
   const { foods, addFood, removeFood, clearAll } = useFoodList();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
@@ -45,19 +42,19 @@ export function FoodListModal({
 
   const handleAdd = (food: string) => {
     const result = addFood(food);
-    if (onShowToast) {
+    if (showToast) {
       if (result.success) {
-        onShowToast("음식이 추가되었습니다", "success");
+        showToast("음식이 추가되었습니다", "success");
       } else {
-        onShowToast(result.error || "추가 실패", "error");
+        showToast(result.error || "추가 실패", "error");
       }
     }
   };
 
   const handleRemove = (index: number) => {
     removeFood(index);
-    if (onShowToast) {
-      onShowToast("음식이 삭제되었습니다", "success");
+    if (showToast) {
+      showToast("음식이 삭제되었습니다", "success");
     }
   };
 
@@ -70,8 +67,8 @@ export function FoodListModal({
   const handleConfirmClearAll = () => {
     clearAll();
     setIsAlertOpen(false);
-    if (onShowToast) {
-      onShowToast("모든 음식이 삭제되었습니다", "success");
+    if (showToast) {
+      showToast("모든 음식이 삭제되었습니다", "success");
     }
   };
 
