@@ -137,8 +137,8 @@ export function HomeScreen() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col items-center justify-center">
-        {/* 슬롯머신 아이콘 - 초기 상태 */}
-        {!isRolling && !showResult && (
+        {/* 슬롯머신 아이콘 - 초기 상태 - Vercel Best Practice: rendering-conditional-render */}
+        {!isRolling && !showResult ? (
           <button
             onClick={handlePickFood}
             className="mb-12 animate-bounce cursor-pointer active:scale-95 transition-transform"
@@ -148,17 +148,17 @@ export function HomeScreen() {
               <SlotMachineIcon className="w-24 h-24" />
             </div>
           </button>
-        )}
+        ) : null}
 
-        {/* Empty State Message */}
-        {!isRolling && !showResult && (
+        {/* Empty State Message - Vercel Best Practice: rendering-conditional-render */}
+        {!isRolling && !showResult ? (
           <div className="text-center text-muted-foreground mb-8">
             <p>음식 뽑기를 시작해보세요!</p>
             <p className="text-sm mt-2">
               100가지 이상의 음식 중 랜덤으로 추천해드려요
             </p>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Action Buttons */}
@@ -191,7 +191,7 @@ export function HomeScreen() {
               <div className="flex items-center justify-center gap-1.5">
                 <IconList size={14} />
                 <span>
-                  내 목록 {customFoods.length > 0 && `(${customFoods.length})`}
+                  내 목록 {customFoods.length > 0 ? `(${customFoods.length})` : null}
                 </span>
               </div>
             </button>
@@ -220,13 +220,13 @@ export function HomeScreen() {
               {isRolling ? "음식 뽑는 중..." : "음식 뽑기"}
             </span>
             {/* Current list indicator - Vercel Best Practice: rendering-conditional-render */}
-            {!isRolling && (
+            {!isRolling ? (
               <span className="text-xs opacity-80 mt-0.5">
                 {useCustomList
                   ? `내 목록 ${customFoods.length}개에서`
                   : "기본 97가지 메뉴에서"}
               </span>
-            )}
+            ) : null}
           </div>
         </button>
 
@@ -239,8 +239,8 @@ export function HomeScreen() {
         </button>
       </div>
 
-      {/* Slot Machine Animation */}
-      {isRolling && result && (
+      {/* Slot Machine Animation - Vercel Best Practice: rendering-conditional-render */}
+      {isRolling && result ? (
         <Suspense fallback={null}>
           <SlotMachine
             isRolling={isRolling}
@@ -250,11 +250,11 @@ export function HomeScreen() {
             isCustomList={useCustomList}
           />
         </Suspense>
-      )}
+      ) : null}
 
-      {/* Result Modal */}
+      {/* Result Modal - Vercel Best Practice: rendering-conditional-render */}
       <AnimatePresence>
-        {showResult && result && (
+        {showResult && result ? (
           <Suspense fallback={null}>
             <FoodResultModal
               foodName={result}
@@ -263,19 +263,19 @@ export function HomeScreen() {
               onClose={handleClose}
             />
           </Suspense>
-        )}
+        ) : null}
       </AnimatePresence>
 
-      {/* Food List Management Modal */}
+      {/* Food List Management Modal - Vercel Best Practice: rendering-conditional-render */}
       <AnimatePresence>
-        {isModalOpen && (
+        {isModalOpen ? (
           <Suspense fallback={null}>
             <FoodListModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
             />
           </Suspense>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );

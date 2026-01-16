@@ -21,4 +21,8 @@ export default defineConfig({
       "@/shared": path.resolve(__dirname, "./src/shared"),
     },
   },
+  // Production 빌드 시 console.log, console.warn, debugger 제거
+  esbuild: {
+    drop: ["console", "debugger"],
+  },
 });

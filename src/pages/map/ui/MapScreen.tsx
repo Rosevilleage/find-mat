@@ -337,9 +337,9 @@ export function MapScreen({
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
-      {/* Back Button - 검색창 확장 시 숨김 */}
+      {/* Back Button - 검색창 확장 시 숨김 - Vercel Best Practice: rendering-conditional-render */}
       <AnimatePresence>
-        {!isSearchExpanded && (
+        {!isSearchExpanded ? (
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -350,7 +350,7 @@ export function MapScreen({
           >
             <IconChevronLeft className="w-5 h-5 text-foreground" />
           </motion.button>
-        )}
+        ) : null}
       </AnimatePresence>
 
       {/* Refresh Button - 검색창 확장 시 숨김 */}
@@ -416,16 +416,16 @@ export function MapScreen({
         onBackToHome={handleBackToHome}
       />
 
-      {/* Restaurant Detail Modal */}
+      {/* Restaurant Detail Modal - Vercel Best Practice: rendering-conditional-render */}
       <AnimatePresence>
-        {selectedRestaurant && (
+        {selectedRestaurant ? (
           <Suspense fallback={null}>
             <RestaurantDetail
               restaurant={selectedRestaurant}
               onClose={() => setSelectedRestaurant(null)}
             />
           </Suspense>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
