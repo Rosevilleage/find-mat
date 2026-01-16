@@ -1,9 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { IconX, IconTrash } from "@tabler/icons-react";
 import { useFoodList } from "../model/useFoodList";
 import { FoodListInput } from "./FoodListInput";
 import { FoodChips } from "./FoodChips";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/shared/ui/kit";
 
 interface FoodListModalProps {
   isOpen: boolean;
@@ -17,6 +27,7 @@ export function FoodListModal({
   onShowToast,
 }: FoodListModalProps) {
   const { foods, addFood, removeFood, clearAll } = useFoodList();
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
 
   // Escape key to close
   useEffect(() => {
@@ -51,14 +62,16 @@ export function FoodListModal({
   };
 
   const handleClearAll = () => {
-    if (
-      foods.length > 0 &&
-      window.confirm("모든 음식을 삭제하시겠습니까?")
-    ) {
-      clearAll();
-      if (onShowToast) {
-        onShowToast("모든 음식이 삭제되었습니다", "success");
-      }
+    if (foods.length > 0) {
+      setIsAlertOpen(true);
+    }
+  };
+
+  const handleConfirmClearAll = () => {
+    clearAll();
+    setIsAlertOpen(false);
+    if (onShowToast) {
+      onShowToast("모든 음식이 삭제되었습니다", "success");
     }
   };
 
@@ -150,6 +163,24 @@ export function FoodListModal({
           <IconX className="w-5 h-5 text-gray-500" />
         </button>
       </motion.div>
+
+      {/* Clear All Alert Dialog */}
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>모든 음식 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 모든 음식을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmClearAll}>
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 }

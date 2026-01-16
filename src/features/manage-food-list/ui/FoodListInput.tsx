@@ -13,6 +13,7 @@ interface FoodListInputProps {
 
 export function FoodListInput({ onAdd }: FoodListInputProps) {
   const [value, setValue] = useState("");
+  const [isComposing, setIsComposing] = useState(false);
 
   const handleSubmit = () => {
     if (value.trim()) {
@@ -21,8 +22,16 @@ export function FoodListInput({ onAdd }: FoodListInputProps) {
     }
   };
 
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !isComposing) {
       e.preventDefault();
       handleSubmit();
     }
@@ -35,6 +44,8 @@ export function FoodListInput({ onAdd }: FoodListInputProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
+        onCompositionStart={handleCompositionStart}
+        onCompositionEnd={handleCompositionEnd}
         autoFocus
       />
       <InputGroupAddon align="inline-end">

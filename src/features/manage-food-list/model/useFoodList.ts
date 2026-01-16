@@ -14,6 +14,13 @@ export function useFoodList(): UseFoodListReturn {
       return { success: false, error: "음식 이름을 입력해주세요" };
     }
 
+    // Korean incomplete character check (자음/모음만 입력된 경우)
+    // U+3131-U+318E: Hangul Compatibility Jamo (ㄱ, ㄴ, ㅏ, ㅑ 등)
+    const incompleteKoreanRegex = /[\u3131-\u318E]/;
+    if (incompleteKoreanRegex.test(trimmedFood)) {
+      return { success: false, error: "완성된 한글만 입력 가능합니다" };
+    }
+
     // Max limit check
     if (foods.length >= MAX_CUSTOM_FOODS) {
       return {
