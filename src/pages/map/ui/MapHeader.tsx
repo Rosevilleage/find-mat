@@ -1,5 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { IconX } from "@tabler/icons-react";
+// Vercel Best Practice: bundle-barrel-imports
+// 직접 import로 번들 크기 최적화 (200-800ms 개선)
+import IconX from "@tabler/icons-react/dist/esm/icons/IconX.mjs";
 import { SearchBar } from "@/features/search-restaurant";
 import { CategoryChips } from "@/features/select-category";
 import { cn } from "@/shared/lib/utils";

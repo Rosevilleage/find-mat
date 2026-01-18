@@ -1,5 +1,8 @@
 import { motion } from "framer-motion";
-import { IconChevronUp, IconMapPinOff } from "@tabler/icons-react";
+// Vercel Best Practice: bundle-barrel-imports
+// 직접 import로 번들 크기 최적화 (200-800ms 개선)
+import IconChevronUp from "@tabler/icons-react/dist/esm/icons/IconChevronUp.mjs";
+import IconMapPinOff from "@tabler/icons-react/dist/esm/icons/IconMapPinOff.mjs";
 import { RestaurantCard, type Restaurant } from "@/entities/restaurant";
 import { CurrentLocationButton } from "@/shared/ui/map-view";
 

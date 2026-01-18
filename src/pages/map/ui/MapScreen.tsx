@@ -12,12 +12,12 @@ const RestaurantDetail = lazy(() =>
     default: m.RestaurantDetail,
   }))
 );
-import {
-  IconMapPinOff,
-  IconSettings,
-  IconChevronLeft,
-  IconRefresh,
-} from "@tabler/icons-react";
+// Vercel Best Practice: bundle-barrel-imports
+// 직접 import로 번들 크기 최적화 (200-800ms 개선)
+import IconMapPinOff from "@tabler/icons-react/dist/esm/icons/IconMapPinOff.mjs";
+import IconSettings from "@tabler/icons-react/dist/esm/icons/IconSettings.mjs";
+import IconChevronLeft from "@tabler/icons-react/dist/esm/icons/IconChevronLeft.mjs";
+import IconRefresh from "@tabler/icons-react/dist/esm/icons/IconRefresh.mjs";
 import { Button } from "@/shared/ui/kit/button";
 import { CATEGORIES } from "@/shared/config";
 import { useGeolocation } from "@/shared/hooks";
