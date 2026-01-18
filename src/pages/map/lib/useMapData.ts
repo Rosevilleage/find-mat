@@ -46,19 +46,23 @@ export function useMapData({
   const getFirstByCategory = (restaurantList: Restaurant[]) => {
     const categoryMap = new Map<string, Restaurant>();
 
-    // 거리 순으로 정렬 (가까운 순)
-    const sorted = [...restaurantList].sort((a, b) =>
+    // Vercel Best Practice: js-tosorted-immutable
+    // toSorted()를 사용하여 불변성 보장 (거리 순으로 정렬 - 가까운 순)
+    const sorted = restaurantList.toSorted((a, b) =>
       parseInt(a.distance || "0") - parseInt(b.distance || "0")
     );
 
+    // Vercel Best Practice: js-cache-property-access
     // 각 카테고리별로 첫 번째 식당만 선택
     sorted.forEach((restaurant) => {
-      if (!categoryMap.has(restaurant.category)) {
-        categoryMap.set(restaurant.category, restaurant);
+      const category = restaurant.category; // 속성 접근 캐싱
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, restaurant);
       }
     });
 
-    return Array.from(categoryMap.values()).sort((a, b) =>
+    // Vercel Best Practice: js-tosorted-immutable
+    return Array.from(categoryMap.values()).toSorted((a, b) =>
       parseInt(a.distance || "0") - parseInt(b.distance || "0")
     );
   };

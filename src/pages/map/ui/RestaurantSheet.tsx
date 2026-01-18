@@ -6,6 +6,25 @@ import IconMapPinOff from "@tabler/icons-react/dist/esm/icons/IconMapPinOff.mjs"
 import { RestaurantCard, type Restaurant } from "@/entities/restaurant";
 import { CurrentLocationButton } from "@/shared/ui/map-view";
 
+// Vercel Best Practice: rendering-hoist-jsx
+// 정적 JSX를 컴포넌트 외부로 추출하여 리렌더링 시 재생성 방지
+const SKELETON_ITEMS = [1, 2, 3];
+
+const SkeletonCard = () => (
+  <div className="bg-card rounded-xl p-4 border animate-pulse">
+    <div className="space-y-3">
+      {/* 제목 스켈레톤 */}
+      <div className="h-5 bg-muted rounded w-2/3" />
+      {/* 카테고리 스켈레톤 */}
+      <div className="h-4 bg-muted rounded w-1/2" />
+      {/* 주소 스켈레톤 */}
+      <div className="h-4 bg-muted rounded w-full" />
+      {/* 전화번호 스켈레톤 */}
+      <div className="h-4 bg-muted rounded w-1/3" />
+    </div>
+  </div>
+);
+
 interface LocationState {
   isLoading: boolean;
   error: string | null;
@@ -100,22 +119,8 @@ export function RestaurantSheet({
           {isSearchLoading ? (
             <div className="space-y-3">
               {/* 스켈레톤 로더 */}
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-card rounded-xl p-4 border animate-pulse"
-                >
-                  <div className="space-y-3">
-                    {/* 제목 스켈레톤 */}
-                    <div className="h-5 bg-muted rounded w-2/3" />
-                    {/* 카테고리 스켈레톤 */}
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                    {/* 주소 스켈레톤 */}
-                    <div className="h-4 bg-muted rounded w-full" />
-                    {/* 전화번호 스켈레톤 */}
-                    <div className="h-4 bg-muted rounded w-1/3" />
-                  </div>
-                </div>
+              {SKELETON_ITEMS.map((i) => (
+                <SkeletonCard key={i} />
               ))}
             </div>
           ) : searchError ? (
