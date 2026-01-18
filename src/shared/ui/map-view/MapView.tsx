@@ -5,6 +5,7 @@ import {
   useUserLocationMarker,
   type MapRestaurant,
 } from "./hooks";
+import { setCenter } from "@/shared/lib/kakao-map";
 
 /**
  * 지도 중심 좌표
@@ -90,6 +91,20 @@ export function MapView({
     map: mapInstance,
     userLocation,
   });
+
+  // 사용자 위치가 처음 로드될 때 지도 중심을 해당 위치로 이동 (한 번만)
+  const hasMovedToUserLocation = React.useRef(false);
+  React.useEffect(() => {
+    if (
+      mapInstance &&
+      center.lat !== DEFAULT_CENTER.lat &&
+      center.lng !== DEFAULT_CENTER.lng &&
+      !hasMovedToUserLocation.current
+    ) {
+      setCenter(mapInstance, center.lat, center.lng);
+      hasMovedToUserLocation.current = true;
+    }
+  }, [mapInstance, center.lat, center.lng]);
 
   // 에러 상태 렌더링
   if (error) {
