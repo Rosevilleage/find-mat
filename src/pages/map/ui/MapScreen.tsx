@@ -42,6 +42,13 @@ export function MapScreen({
   // 사용자 위치 가져오기 (실패 시 서울 기본 좌표 사용)
   const { coordinates: userLocation, error: geoError } = useGeolocation();
 
+  // Vercel Best Practice: rerender-dependencies
+  // showToast를 ref에 저장하여 불필요한 리렌더링 방지
+  const showToastRef = React.useRef(showToast);
+  React.useEffect(() => {
+    showToastRef.current = showToast;
+  });
+
   // 토스트 표시 여부 추적 (한 번만 표시하기 위함)
   const hasShownToast = React.useRef(false);
 
@@ -51,29 +58,51 @@ export function MapScreen({
       console.warn("📍 위치 정보:", geoError);
 
       // 사용자에게 위치 권한 에러 표시
-      if (showToast) {
+      if (showToastRef.current) {
         if (geoError.includes("거부")) {
-          showToast(
+          showToastRef.current(
             "위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.",
             "error"
           );
         } else if (geoError.includes("사용할 수 없습니다")) {
           // POSITION_UNAVAILABLE 에러 - 시스템 위치 서비스 비활성화
-          showToast(
+          showToastRef.current(
             "시스템 위치 서비스가 비활성화되어 있습니다. 시스템 설정에서 위치 서비스를 활성화해주세요.",
             "error"
           );
         } else {
-          showToast(geoError, "error");
+          showToastRef.current(geoError, "error");
         }
         hasShownToast.current = true;
       }
     }
-  }, [geoError, showToast]);
+  }, [geoError]); // showToast 의존성 제거
 
   // 위치 권한 상태 확인 (Permissions API 사용)
+  // Vercel Best Practice: client-event-listeners
+  // 이벤트 리스너 정리를 통한 메모리 누수 방지
   React.useEffect(() => {
     let hasShownPermissionToast = false;
+    let permissionStatus: PermissionStatus | null = null;
+
+    const handlePermissionChange = () => {
+      if (!permissionStatus) return;
+
+      console.log("🔐 위치 권한 상태 변경:", permissionStatus.state);
+
+      if (
+        permissionStatus.state === "granted" &&
+        showToastRef.current &&
+        !hasShownPermissionToast
+      ) {
+        hasShownPermissionToast = true;
+        showToastRef.current("위치 권한이 허용되었습니다.", "success");
+        // 페이지 새로고침으로 위치 다시 가져오기
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    };
 
     const checkPermission = async () => {
       try {
@@ -83,36 +112,28 @@ export function MapScreen({
           return;
         }
 
-        const result = await navigator.permissions.query({
+        permissionStatus = await navigator.permissions.query({
           name: "geolocation",
         });
 
-        console.log("🔐 위치 권한 상태:", result.state);
+        console.log("🔐 위치 권한 상태:", permissionStatus.state);
 
         // 권한 상태가 변경될 때마다 로그 (토스트는 한 번만)
-        result.addEventListener("change", () => {
-          console.log("🔐 위치 권한 상태 변경:", result.state);
-
-          if (
-            result.state === "granted" &&
-            showToast &&
-            !hasShownPermissionToast
-          ) {
-            hasShownPermissionToast = true;
-            showToast("위치 권한이 허용되었습니다.", "success");
-            // 페이지 새로고침으로 위치 다시 가져오기
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
-        });
+        permissionStatus.addEventListener("change", handlePermissionChange);
       } catch (error) {
         console.warn("⚠️ 위치 권한 확인 실패:", error);
       }
     };
 
     checkPermission();
-  }, [showToast]);
+
+    // Cleanup: 이벤트 리스너 제거
+    return () => {
+      if (permissionStatus) {
+        permissionStatus.removeEventListener("change", handlePermissionChange);
+      }
+    };
+  }, []); // showToast 의존성 제거
 
   // URL에서 검색 파라미터 읽기
   const searchedFood = searchParams.get("food");
@@ -287,8 +308,8 @@ export function MapScreen({
       )}&lat=${centerLat}&lng=${centerLng}&radius=${radius}`
     );
 
-    if (showToast) {
-      showToast(`반경 ${radius / 1000}km 내 ${keyword} 검색 중...`, "info");
+    if (showToastRef.current) {
+      showToastRef.current(`반경 ${radius / 1000}km 내 ${keyword} 검색 중...`, "info");
     }
   };
 

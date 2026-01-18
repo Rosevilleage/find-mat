@@ -61,7 +61,8 @@ export function MapHeader({
                   onExpand={onSearchExpand}
                 />
               </motion.div>
-              {searchedFood && (
+              {/* Vercel Best Practice: rendering-conditional-render */}
+              {searchedFood ? (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -84,7 +85,7 @@ export function MapHeader({
                     <IconX className="w-4 h-4 text-primary" />
                   </button>
                 </motion.div>
-              )}
+              ) : null}
             </>
           ) : (
             <motion.div
@@ -110,7 +111,8 @@ export function MapHeader({
         <SearchBar onFilterClick={() => {}} />
 
         {/* 검색된 음식 표시 */}
-        {searchedFood && (
+        {/* Vercel Best Practice: rendering-conditional-render */}
+        {searchedFood ? (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,15 +129,15 @@ export function MapHeader({
               <IconX className="w-4 h-4 text-primary" />
             </button>
           </motion.div>
-        )}
+        ) : null}
 
-        {!searchedFood && (
+        {!searchedFood ? (
           <CategoryChips
             categories={categories}
             selected={selectedCategory}
             onSelect={onCategorySelect}
           />
-        )}
+        ) : null}
       </div>
     </div>
   );
