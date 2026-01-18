@@ -5,7 +5,6 @@ import { SlotMachineIcon } from "@/widgets/slot-machine/ui/SlotMachineIcon";
 import { useFoodList } from "@/features/manage-food-list";
 import { useToast } from "@/shared/contexts";
 
-// Vercel Best Practice: bundle-dynamic-imports - 무거운 모달/위젯을 lazy loading
 const SlotMachine = lazy(() =>
   import("@/widgets/slot-machine/ui/SlotMachine").then((m) => ({
     default: m.SlotMachine,
@@ -137,7 +136,7 @@ export function HomeScreen() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col items-center justify-center">
-        {/* 슬롯머신 아이콘 - 초기 상태 - Vercel Best Practice: rendering-conditional-render */}
+        {/* 슬롯머신 아이콘 - 초기 상태 */}
         {!isRolling && !showResult ? (
           <button
             onClick={handlePickFood}
@@ -150,7 +149,7 @@ export function HomeScreen() {
           </button>
         ) : null}
 
-        {/* Empty State Message - Vercel Best Practice: rendering-conditional-render */}
+        {/* Empty State Message */}
         {!isRolling && !showResult ? (
           <div className="text-center text-muted-foreground mb-8">
             <p>음식 뽑기를 시작해보세요!</p>
@@ -163,7 +162,7 @@ export function HomeScreen() {
 
       {/* Action Buttons */}
       <div className="mt-auto space-y-3">
-        {/* Compact Segment Control - Vercel Best Practice: rendering-conditional-render */}
+        {/* Compact Segment Control */}
         <div className="flex items-center gap-2">
           {/* iOS-style Segment Control */}
           <div className="flex-1 bg-gray-100 rounded-lg p-1 flex gap-1">
@@ -219,7 +218,7 @@ export function HomeScreen() {
             <span className="text-lg font-semibold">
               {isRolling ? "음식 뽑는 중..." : "음식 뽑기"}
             </span>
-            {/* Current list indicator - Vercel Best Practice: rendering-conditional-render */}
+            {/* Current list indicator */}
             {!isRolling ? (
               <span className="text-xs opacity-80 mt-0.5">
                 {useCustomList
@@ -239,7 +238,7 @@ export function HomeScreen() {
         </button>
       </div>
 
-      {/* Slot Machine Animation - Vercel Best Practice: rendering-conditional-render */}
+      {/* Slot Machine Animation */}
       {isRolling && result ? (
         <Suspense fallback={null}>
           <SlotMachine
@@ -252,7 +251,7 @@ export function HomeScreen() {
         </Suspense>
       ) : null}
 
-      {/* Result Modal - Vercel Best Practice: rendering-conditional-render */}
+      {/* Result Modal */}
       <AnimatePresence>
         {showResult && result ? (
           <Suspense fallback={null}>
@@ -266,7 +265,7 @@ export function HomeScreen() {
         ) : null}
       </AnimatePresence>
 
-      {/* Food List Management Modal - Vercel Best Practice: rendering-conditional-render */}
+      {/* Food List Management Modal */}
       <AnimatePresence>
         {isModalOpen ? (
           <Suspense fallback={null}>

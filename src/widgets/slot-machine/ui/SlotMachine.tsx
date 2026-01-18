@@ -19,7 +19,6 @@ import {
   DefaultIcon,
 } from "@/entities/food";
 
-// Vercel Best Practice: rendering-hoist-jsx - 아이콘 배열을 모듈 레벨에서 정의
 const ALL_FOOD_ICONS = [
   KoreanFoodIcon,
   ChineseFoodIcon,
@@ -65,7 +64,6 @@ interface SlotColumn {
   isCustomList: boolean; // 커스텀 목록 여부를 저장
 }
 
-// Vercel Best Practice: rerender-memo - Extract expensive work into memoized components
 const SlotMachineComponent = ({
   isRolling,
   foodItems,
@@ -101,15 +99,12 @@ const SlotMachineComponent = ({
       const resultIndex = 15;
       randomFoods[resultIndex] = result;
 
-      // Vercel Best Practice: rendering-conditional-render
-      // 커스텀 목록과 기본 목록에 따라 다른 레이아웃 사용
       let categories: string[];
       let icons: React.ComponentType<{ className?: string }>[];
       let foodNames: string[];
 
       if (isCustomList) {
         // 내 목록: 1열 메뉴이름 | 2열 아이콘 | 3열 메뉴이름
-        // Vercel Best Practice: js-cache-function-results - 랜덤 아이콘 생성
         categories = randomFoods; // 1열: 메뉴 이름
         icons = randomFoods.map((_, index) => {
           // 결과 위치(index 15)만 기타 아이콘, 나머지는 랜덤 아이콘
@@ -189,7 +184,7 @@ const SlotMachineComponent = ({
               {/* 하단 그라디언트 오버레이 */}
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-linear-to-t from-indigo-500 to-transparent z-10 pointer-events-none" />
 
-              {/* 3개의 슬롯 컬럼 - Vercel Best Practice: rendering-conditional-render */}
+              {/* 3개의 슬롯 컬럼 */}
               <div className="relative h-64 overflow-hidden flex">
                 {/* 컬럼 1: 커스텀이면 메뉴이름, 기본이면 카테고리 */}
                 <div className="flex-1 relative overflow-hidden border-r-2 border-white/20">
@@ -345,5 +340,4 @@ const SlotMachineComponent = ({
   );
 };
 
-// Vercel Best Practice: rerender-memo - Memoize to prevent unnecessary re-renders
 export const SlotMachine = memo(SlotMachineComponent);

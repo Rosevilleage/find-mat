@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-// Vercel Best Practice: bundle-barrel-imports
-// 직접 import로 번들 크기 최적화 (200-800ms 개선)
+
 import IconX from "@tabler/icons-react/dist/esm/icons/IconX.mjs";
 import { SearchBar } from "@/features/search-restaurant";
 import { CategoryChips } from "@/features/select-category";
@@ -61,7 +60,6 @@ export function MapHeader({
                   onExpand={onSearchExpand}
                 />
               </motion.div>
-              {/* Vercel Best Practice: rendering-conditional-render */}
               {searchedFood ? (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -111,7 +109,6 @@ export function MapHeader({
         <SearchBar onFilterClick={() => {}} />
 
         {/* 검색된 음식 표시 */}
-        {/* Vercel Best Practice: rendering-conditional-render */}
         {searchedFood ? (
           <motion.div
             initial={{ opacity: 0, y: -10 }}

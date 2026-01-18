@@ -7,7 +7,6 @@ const STORAGE_KEY = "custom-food-list";
 export function useFoodList(): UseFoodListReturn {
   const [foods, setFoods] = useLocalStorage<string[]>(STORAGE_KEY, []);
 
-  // Vercel Best Practice: rerender-functional-setstate
   const addFood = useCallback((food: string): { success: boolean; error?: string } => {
     const trimmedFood = food.trim();
 

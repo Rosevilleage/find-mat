@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router";
 import { PatternBackground } from "@/shared/ui/pattern-background";
 import { ToastProvider } from "@/shared/contexts";
 
-// Vercel Best Practice: bundle-dynamic-imports - 페이지 컴포넌트를 lazy loading으로 변경
 const HomeScreen = lazy(() =>
   import("@/pages/home").then((m) => ({ default: m.HomeScreen }))
 );

@@ -1,13 +1,9 @@
 import { motion } from "framer-motion";
-// Vercel Best Practice: bundle-barrel-imports
-// 직접 import로 번들 크기 최적화 (200-800ms 개선)
 import IconChevronUp from "@tabler/icons-react/dist/esm/icons/IconChevronUp.mjs";
 import IconMapPinOff from "@tabler/icons-react/dist/esm/icons/IconMapPinOff.mjs";
 import { RestaurantCard, type Restaurant } from "@/entities/restaurant";
 import { CurrentLocationButton } from "@/shared/ui/map-view";
 
-// Vercel Best Practice: rendering-hoist-jsx
-// 정적 JSX를 컴포넌트 외부로 추출하여 리렌더링 시 재생성 방지
 const SKELETON_ITEMS = [1, 2, 3];
 
 const SkeletonCard = () => (

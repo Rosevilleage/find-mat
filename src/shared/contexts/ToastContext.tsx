@@ -16,10 +16,6 @@ interface ToastProviderProps {
 /**
  * Toast Context Provider
  *
- * Vercel Best Practice: rerender-defer-reads
- * - Toast 상태를 Context로 분리하여 prop drilling 제거
- * - showToast 함수를 안정적으로 제공
- *
  * @example
  * ```tsx
  * <ToastProvider>
@@ -34,8 +30,6 @@ export function ToastProvider({ children }: ToastProviderProps) {
     visible: false,
   });
 
-  // Vercel Best Practice: rerender-functional-setstate
-  // setToast는 안정적이므로 의존성 배열에 포함하지 않아도 됨
   const showToast = useCallback((message: string, type: ToastType = "success") => {
     setToast({ message, type, visible: true });
     setTimeout(() => {

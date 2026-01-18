@@ -6,14 +6,11 @@ import { MapView, useCurrentLocation } from "@/shared/ui/map-view";
 import type { Restaurant } from "@/entities/restaurant";
 import { useToast } from "@/shared/contexts";
 
-// Vercel Best Practice: bundle-dynamic-imports - 무거운 모달을 lazy loading
 const RestaurantDetail = lazy(() =>
   import("@/widgets/restaurant-detail").then((m) => ({
     default: m.RestaurantDetail,
   }))
 );
-// Vercel Best Practice: bundle-barrel-imports
-// 직접 import로 번들 크기 최적화 (200-800ms 개선)
 import IconMapPinOff from "@tabler/icons-react/dist/esm/icons/IconMapPinOff.mjs";
 import IconSettings from "@tabler/icons-react/dist/esm/icons/IconSettings.mjs";
 import IconChevronLeft from "@tabler/icons-react/dist/esm/icons/IconChevronLeft.mjs";
@@ -42,8 +39,6 @@ export function MapScreen({
   // 사용자 위치 가져오기 (실패 시 서울 기본 좌표 사용)
   const { coordinates: userLocation, error: geoError } = useGeolocation();
 
-  // Vercel Best Practice: rerender-dependencies
-  // showToast를 ref에 저장하여 불필요한 리렌더링 방지
   const showToastRef = React.useRef(showToast);
   React.useEffect(() => {
     showToastRef.current = showToast;
@@ -79,8 +74,6 @@ export function MapScreen({
   }, [geoError]); // showToast 의존성 제거
 
   // 위치 권한 상태 확인 (Permissions API 사용)
-  // Vercel Best Practice: client-event-listeners
-  // 이벤트 리스너 정리를 통한 메모리 누수 방지
   React.useEffect(() => {
     let hasShownPermissionToast = false;
     let permissionStatus: PermissionStatus | null = null;
@@ -142,7 +135,6 @@ export function MapScreen({
   const searchRadius = searchParams.get("radius");
 
   // 검색 위치: URL 파라미터가 있으면 사용, 없으면 사용자 위치 사용
-  // Vercel Best Practice: rerender-dependencies - 원시 값으로 의존성 변경
   const userLat = userLocation?.lat;
   const userLng = userLocation?.lng;
   const searchLocation = useMemo(() => {
@@ -358,7 +350,7 @@ export function MapScreen({
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
-      {/* Back Button - 검색창 확장 시 숨김 - Vercel Best Practice: rendering-conditional-render */}
+      {/* Back Button - 검색창 확장 시 숨김 */}
       <AnimatePresence>
         {!isSearchExpanded ? (
           <motion.button
@@ -437,7 +429,7 @@ export function MapScreen({
         onBackToHome={handleBackToHome}
       />
 
-      {/* Restaurant Detail Modal - Vercel Best Practice: rendering-conditional-render */}
+      {/* Restaurant Detail Modal */}
       <AnimatePresence>
         {selectedRestaurant ? (
           <Suspense fallback={null}>
