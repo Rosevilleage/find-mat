@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   server: {
     host: true,
@@ -21,8 +21,8 @@ export default defineConfig({
       "@/shared": path.resolve(__dirname, "./src/shared"),
     },
   },
-  // Production 빌드 시 console.log, console.warn, debugger 제거
+  // Production 빌드 시에만 console.log, console.warn, debugger 제거
   esbuild: {
-    drop: ["console", "debugger"],
+    drop: mode === "production" ? ["console", "debugger"] : [],
   },
-});
+}));
